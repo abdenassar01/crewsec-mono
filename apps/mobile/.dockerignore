@@ -1,0 +1,15 @@
+.git
+
+node_modules
+
+.pnpm-store
+
+.expo/
+
+.env
+
+web-build
+
+.vscode/
+.idea/
+*.DS_Store

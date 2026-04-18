@@ -1,0 +1,29 @@
+# Stage 1: The "base" stage with our built files
+# We give this stage a name "build" to refer to it later
+FROM busybox:latest AS build
+
+# Copy the pre-built files from your local machine into the image
+# Make sure your build output directory is named 'dist'. If it's 'web-build', change it here.
+COPY dist/ /app/
+
+# Stage 2: The "production" stage
+# This is the final image that will be deployed. It's very small.
+FROM nginx:stable-alpine
+
+# Remove the default nginx website
+RUN rm -rf /usr/share/nginx/html/*
+
+# Copy the built app from the "build" stage to the Nginx web root
+COPY --from=build /app/ /usr/share/nginx/html
+
+# This is crucial for Single Page Applications (SPAs) like Expo Web.
+# It ensures that if a user reloads the page on a route like /profile,
+# Nginx doesn't look for a file named "profile" but instead serves index.html,
+# letting your app's router handle it.
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Expose port 80 to the outside world
+EXPOSE 8081
+
+# Command to run nginx in the foreground
+CMD ["nginx", "-g", "daemon off;"]

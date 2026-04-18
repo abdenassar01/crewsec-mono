@@ -1,0 +1,310 @@
+{
+  "Makulera": {
+    "title": "Cancel"
+  },
+  "modal": {
+    "alarm": "Are you sure you want to send the alarm notification to admin?",
+    "session": "Are you sure you want to end this session?"
+  },
+  "add-user": {
+    "step-one": "User Information",
+    "step-two": "Parking Information",
+    "title": "Add User",
+    "update": "Update Parking",
+    "update-user-info": "Update User Information",
+    "role-selection": {
+      "title": "Select Account Type",
+      "description": "Choose what type of account you want to create"
+    },
+    "roles": {
+      "admin": {
+        "title": "Administrator",
+        "description": "Full system access and management capabilities"
+      },
+      "employee": {
+        "title": "Employee",
+        "description": "Access to parking management features"
+      },
+      "client": {
+        "title": "Client",
+        "description": "Personal parking account with full parking management"
+      }
+    }
+  },
+  "cancel": "Cancel",
+  "end-session": "End Session",
+  "control-vehicle": {
+    "location-list": "Location list",
+    "title": "Control Vehicle",
+    "no-veh-easypark": "No Parking registered with this reference"
+  },
+  "felparkering": {
+    "title": "Wrong Parking"
+  },
+  "forms": {
+    "additional-infos": "Additional information (optional)",
+    "address": "Address",
+    "arrived": "Arrived",
+    "vehicle": "Vehicle",
+    "gallery": "Gallery",
+    "capacity": "Capacity",
+    "complaint-type": "Select complaint type",
+    "dates": "Dates",
+    "description": "Description",
+    "email": "Email",
+    "role": "Role",
+    "select-role": "Select Role",
+    "updating": "Updating...",
+    "errors": {
+      "start-date-error": "Start date must be before end date",
+      "join-date-past-error": "Join date cannot be in the past",
+      "address-required": "Address is required",
+      "date-required": "Please specify a date",
+      "email-invalid": "Email is invalid, example@mail.com",
+      "email-required": "Email is required",
+      "firstname-required": "Firstname is required",
+      "fullname-required": "Fullname is required",
+      "house-number-required": "House number is required",
+      "lastname-required": "Lastname is required",
+      "parking-capacity-required": "Parking capacity is required",
+      "parking-description-required": "Parking description is required",
+      "parking-location-required": "Parking location url is required",
+      "parking-name-required": "Parking name is required",
+      "password-not-strong": "Password must be at least 8 characters",
+      "password-required": "Password is required",
+      "phone-required": "Phone number is required",
+      "reference-required": "Reference is required",
+      "required": "Required",
+      "update-failed": "Failed to update user. Please try again."
+    },
+    "finished": "Finished",
+    "firstname": "Firstname",
+    "house-number": "Apartment number",
+    "image": "Image",
+    "lastname": "Lastname",
+    "name": "Name",
+    "query": "Query",
+    "name-placeholder": "Your name",
+    "next": "Next",
+    "onsite": "On-site",
+    "parking-name": "Parking Name",
+    "password": "Password",
+    "phone": "Phone Number",
+    "prev": "Previous",
+    "price": "Price",
+    "price-unit": "Price Unit",
+    "reference": "Matricule",
+    "report": "Course of events",
+    "security": "Parking secured",
+    "step": "Step {{step}}",
+    "submit": "Submit",
+    "success": {
+      "item-added": "Successfully added item"
+    },
+    "website": "Website url"
+  },
+  "home": {
+    "dashboard": "Admin Dashboard",
+    "location": "Location on google maps",
+    "parking": "Parking",
+    "alarm": "Report Disturbance",
+    "restorer": "New Car"
+  },
+  "admin": {
+    "users": "Manage Users",
+    "total": "Total",
+    "felparkering": "Manage Felparkering",
+    "makulera": "Manage Makulera",
+    "vehicles": "Manage Vehicles",
+    "violation": "Manage Violations",
+    "control-fee": "Control Fee",
+    "stats": "Statistics",
+    "latest-reports": "Latest Reports",
+    "no-reports": "No reports yet",
+    "no-users": "No users in system",
+    "no-makulera": "No Makulera for this parking found",
+    "no-felparkering": "No Felparkering for this parking found",
+    "violation-location": "Locations",
+    "submit-violation": "Submit a violation",
+    "parking-infos": "Parking Info"
+  },
+  "login": {
+    "login": "Login",
+    "logout": "Logout",
+    "sure-to-signout": "Are you sure you want to sign out?",
+    "welcome": "Welcome Back 👋"
+  },
+  "manage-parking": {
+    "date": "Date",
+    "days": "{{nbr}} days",
+    "expand-date": "Expand Date",
+    "from": "From",
+    "reference": "Matricule",
+    "remove": "Remove",
+    "submit": "Add Car",
+    "sure-remove-user": "Sure you want to remove the user?",
+    "time-left": "Time left",
+    "title": "Manage Parking",
+    "to": "To"
+  },
+  "control": {
+    "towns": "Town",
+    "towns-empty": "No Towns available in this location",
+    "locations": "Location",
+    "locations-empty": "No Locations available",
+    "violation": "Violation",
+    "violation-empty": "No Violations available",
+    "price": "Price",
+    "submit": "Submit a violation",
+    "preview": "Preview",
+    "print": "print",
+    "sign-checked": "Sign checked",
+    "images-checked": "Images checked"
+  },
+  "not-found": "Not Provided Yet",
+  "onboarding": {
+    "get-started": "Get Started",
+    "language": "Language",
+    "message": "Configure your custom experience",
+    "theme": "Theme",
+    "welcome": "Welcome"
+  },
+  "parking": {
+    "Information": "Information",
+    "Makulera": "Makulera",
+    "available": "{{nbr}} spots available",
+    "felparkering": "Felparkering",
+    "manage": "Manage Parking",
+    "max": "Support {{max}} spots max",
+    "more": "More information",
+    "price": "{{price}}$/Hour",
+    "security": "Security included",
+    "taken": "Taken spots",
+    "title": "My parking",
+    "unavailable": "{{nbr}} spots unavailable",
+    "vehicle-control": "Control Vehicle",
+    "wrong": "Wrong Parking"
+  },
+  "price-unit": {
+    "day": "Day",
+    "hour": "Hour",
+    "month": "Month",
+    "week": "Week"
+  },
+  "report": {
+    "desc-placeholder": "Describe what are you reporting...",
+    "disturbance-details": "Disturbance Details",
+    "disturbing-tenant": "Disturbing Tenant(s)",
+    "note": "This tab is used to submit a complaint about any problem that you may be having. The support will resolve with the complaint",
+    "note-label": "Note",
+    "report-list": "Report List",
+    "reporting-tenant": "Reporting Tenant",
+    "submit": "Submit the report",
+    "title": "Report Disturbance"
+  },
+  "report-status": {
+    "awaiting": "Awaiting",
+    "refused": "Refused",
+    "resolved": "Resolved",
+    "conflict": "Conflict"
+  },
+  "resolve": "Resolve",
+  "role": {
+    "parking": "Parking",
+    "restorer": "Restorer"
+  },
+  "yes": "Yes",
+  "no": "No",
+  "controlFee": {
+    "details": {
+      "headerTitle": "Control Fee Details",
+      "notFound": "Control Fee not found.",
+      "generalInfo": {
+        "title": "General Information",
+        "reference": "Reference",
+        "vehicleMark": "Vehicle Mark",
+        "status": "Status",
+        "startDate": "Start Date",
+        "endDate": "End Date"
+      },
+      "location": {
+        "title": "Location",
+        "address": "Address",
+        "town": "Town"
+      },
+      "violation": {
+        "title": "Violation Details",
+        "violation": "Violation",
+        "location": "Violation Location",
+        "price": "Price"
+      },
+      "checks": {
+        "title": "Checks",
+        "signsChecked": "Signs Checked",
+        "photosTaken": "Photos Taken"
+      },
+      "ticket": {
+        "title": "Ticket"
+      },
+      "gallery": {
+        "title": "Gallery",
+        "noPhotos": "No photos available."
+      },
+      "ticket": {
+        "title": "Ticket"
+      }
+    }
+  },
+  "common": {
+    "ok": "OK",
+    "save": "Save",
+    "complete": "Complete",
+    "delete": "Delete",
+    "completed": "Completed",
+    "saved": "Saved"
+  },
+  "reference-detail": {
+    "delete-title": "Delete Reference",
+    "delete-message": "Are you sure you want to delete this reference? This action cannot be undone.",
+    "complete-message": "Reference marked as completed.",
+    "save-message": "Progress saved locally."
+  },
+  "parking-info": {
+    "title": "Parking Information",
+    "working-hours": "Working Hours",
+    "general-info": "General Information",
+    "instructions": "Instructions",
+    "instructions-placeholder": "Enter parking instructions...",
+    "closed": "Closed",
+    "edit": "Edit Info",
+    "save-success": "Parking info updated successfully",
+    "not-found": "No parking information available"
+  },
+  "statistics": {
+    "title": "Statistics",
+    "day": "Day",
+    "week": "Week",
+    "month": "Month",
+    "no-data": "No data available for selected period",
+    "total": "Total",
+    "total-control-fees": "Total Control Fees",
+    "paid-control-fees": "Paid Control Fees",
+    "conflict-control-fees": "Conflict Control Fees",
+    "canceled-control-fees": "Canceled Control Fees",
+    "control-fees-by-time": "Control Fees by Time",
+    "by-status": "By Status",
+    "status-breakdown": "Status Breakdown",
+    "awaiting": "Awaiting",
+    "paid": "Paid",
+    "canceled": "Canceled",
+    "conflict": "Conflict",
+    "currently-parked": "Currently Parked",
+    "total-vehicles": "Total Vehicles",
+    "violations": "Violations",
+    "unresolved": "Unresolved",
+    "resolved": "Resolved",
+    "by-type": "By Type",
+    "felparkering": "Wrong Parking",
+    "makulera": "Canceled"
+  }
+}

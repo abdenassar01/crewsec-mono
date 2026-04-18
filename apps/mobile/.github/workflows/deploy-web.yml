@@ -1,0 +1,87 @@
+# # .github/workflows/build-and-deploy.yml
+# name: Build & Deploy
+
+# on:
+#   push:
+#     branches:
+#       - main
+
+#   workflow_dispatch:
+#     # This trigger allows you to manually run the workflow from the GitHub UI,
+#     # or programmatically dispatch it using gh CLI or GitHub API.
+#     inputs:
+#       reason:
+#         description: 'Reason for workflow dispatch'
+#         required: false
+#         default: 'Manual trigger or System Restart'
+
+# jobs:
+#   build-and-deploy:
+#     runs-on: [self-hosted, linux, x64] # Your self-hosted runner labels
+
+#     steps:
+#       - name: Display dispatch reason (if applicable)
+#         if: github.event_name == 'workflow_dispatch'
+#         run: |
+#           echo "Workflow dispatched for reason: ${{ github.event.inputs.reason }}"
+
+#       - name: Checkout code
+#         uses: actions/checkout@v3
+
+#       - name: Set up Node.js
+#         uses: actions/setup-node@v3
+#         with:
+#           node-version: '18'
+#           # Use pnpm as the package manager if it's your primary
+#           cache: 'pnpm'
+
+#       - name: Install dependencies
+#         run: pnpm install
+
+#       - name: Build the application
+#         # It's better to perform relative paths or ensure your runner's working directory
+#         # is correctly set. The default working directory for a job is the repository root.
+#         # If your 'crewsec' directory is at the root of your repo, you might not need the `cd`.
+#         # Assuming `crewsec` is the root of the repo:
+#         run: npx expo export --platform web
+
+#       # Your commented out step, uncomment if needed
+#       # - name: Copy build files to web directory
+#       #   run: |
+#       #     mkdir -p web
+#       #     cp -r web-build/* web/
+
+#       - name: Install pm2 globally
+#         # Best practice for global installs in CI/CD:
+#         # If possible, install locally or use npx.
+#         # If truly global, ensure the path is correct or accessible.
+#         run: sudo npm install -g pm2
+
+#       - name: Stop existing pm2 service (if running)
+#         # It's good practice to stop before starting, especially if it might be running.
+#         # This prevents "already running" errors and ensures a clean start.
+#         run: |
+#           pm2 stop crewsec-web || true # `|| true` prevents step failure if service isn't found
+#           pm2 delete crewsec-web || true
+
+#       - name: Start pm2 service
+#         # Ensure the paths are correct. The `npx` command will look for `expo`
+#         # within your project's `node_modules` or globally.
+#         # `expo serve` usually serves from the current working directory,
+#         # which is the repo root after checkout.
+#         run: |
+#           pm2 start npx --name crewsec-web -- expo serve
+#         # Note: `expo serve` expects to serve from the `web-build` directory,
+#         # so make sure your `npx expo export --platform web` correctly puts files there,
+#         # or adjust the `expo serve` command if it expects a specific path like `--dir <path>`.
+#         # Typically, `expo serve --web-build` is the way to serve the built output.
+
+
+#       # The "Restart pm2 service" step is redundant if you just started it cleanly.
+#       # If you were only *restarting* on push, then you'd keep it.
+#       # For a restart-trigger, you'd likely want to ensure it's *started* fresh.
+#       # - name: Restart pm2 service
+#       #   run: pm2 restart crewsec-web
+
+#       - name: Save PM2 process list (optional but recommended)
+#         run: pm2 save

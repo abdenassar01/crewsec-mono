@@ -1,0 +1,1 @@
+export { ControlledCheckBox } from './checkbox';

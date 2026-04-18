@@ -1,0 +1,309 @@
+{
+  "Makulera": {
+    "title": "Makulera"
+  },
+  "modal": {
+    "alarm": "Är du säker på att du vill skicka larmmeddelandet till administratören?",
+    "session": "Är du säker på att du vill avsluta denna session?"
+  },
+  "end-session": "Avsluta session",
+  "add-user": {
+    "step-one": "Användarinformation",
+    "step-two": "Parkeringsinformation",
+    "title": "Lägg till användare",
+    "update": "Uppdatera parkering",
+    "update-user-info": "Uppdatera användarinformation",
+    "role-selection": {
+      "title": "Välj kontotyp",
+      "description": "Välj vilken typ av konto du vill skapa"
+    },
+    "roles": {
+      "admin": {
+        "title": "Administratör",
+        "description": "Full systemåtkomst och hanteringskapacitet"
+      },
+      "employee": {
+        "title": "Anställd",
+        "description": "Åtkomst till parkeringshanteringsfunktioner"
+      },
+      "client": {
+        "title": "Klient",
+        "description": "Personligt parkeringskonto med full parkeringshantering"
+      }
+    }
+  },
+  "cancel": "Avbryt",
+  "control-vehicle": {
+    "location-list": "Platslista",
+    "title": "Fordonskontroll",
+    "no-veh-easypark": "Ingen parkering registrerad med denna referens"
+  },
+  "felparkering": {
+    "title": "Felparkering"
+  },
+  "forms": {
+    "additional-infos": "Ytterligare information (valfritt)",
+    "address": "Adress",
+    "arrived": "Ankom",
+    "vehicle": "Fordon",
+    "gallery": "Galleri",
+    "capacity": "Kapacitet",
+    "complaint-type": "Välj klagomålstyp",
+    "dates": "Datum",
+    "description": "Beskrivning",
+    "email": "E-post",
+    "role": "Roll",
+    "select-role": "Välj roll",
+    "enabled": "Aktiverad",
+    "updating": "Uppdaterar...",
+    "errors": {
+      "start-date-error": "Startdatum måste vara före slutdatum",
+      "join-date-past-error": "Anslutningsdatum kan inte vara i det förflutna",
+      "address-required": "Adress krävs",
+      "date-required": "Ange ett datum",
+      "email-invalid": "E-postadressen är ogiltig, exempel@mail.com",
+      "email-required": "E-postadress krävs",
+      "firstname-required": "Förnamn krävs",
+      "fullname-required": "Fullständigt namn krävs",
+      "house-number-required": "Husnummer krävs",
+      "lastname-required": "Efternamn krävs",
+      "parking-capacity-required": "Parkeringskapacitet krävs",
+      "parking-description-required": "Beskrivning av parkeringen krävs",
+      "parking-location-required": "URL för parkeringsplats krävs",
+      "parking-name-required": "Parkeringsnamn krävs",
+      "password-not-strong": "Lösenordet måste vara minst 8 tecken",
+      "password-required": "Lösenord krävs",
+      "phone-required": "Telefonnummer krävs",
+      "reference-required": "Referens krävs",
+      "required": "Obligatoriskt",
+      "update-failed": "Kunde inte uppdatera användare. Försök igen."
+    },
+    "finished": "klar",
+    "firstname": "Förnamn",
+    "house-number": "Lägenhetsnr",
+    "image": "Bild",
+    "lastname": "Efternamn",
+    "name": "Namn",
+    "query": "Fråga",
+    "name-placeholder": "Ditt namn",
+    "email-placeholder": "Din e-postadress",
+    "phone-placeholder": "Ditt telefonnummer",
+    "role-placeholder": "Välj en roll",
+    "enabled-placeholder": "Aktivera användare",
+    "next": "Nästa",
+    "onsite": "På plats",
+    "parking-name": "Parkeringsnamn",
+    "password": "Lösenord",
+    "phone": "Telefon",
+    "prev": "Föregående",
+    "price": "Pris",
+    "price-unit": "Prisenhet",
+    "reference": "Registreringsnummer",
+    "report": "Händelseförlopp",
+    "security": "Parkering säkerställd",
+    "step": "Steg {{step}}",
+    "submit": "Skicka",
+    "success": {
+      "item-added": "Objektet har lagts till framgångsrikt"
+    },
+    "website": "Webbplatsens URL"
+  },
+  "home": {
+    "dashboard": "Adminpanel",
+    "location": "Plats på Google Maps",
+    "parking": "Parkering",
+    "alarm": "Larm",
+    "restorer": "Lägg till ny bil"
+  },
+  "admin": {
+    "users": "Hantera användare",
+    "total": "Totalt",
+    "reports": "Hantera rapporter",
+    "felparkering": "Hantera Felparkering",
+    "makulera": "Hantera Makuleringar",
+    "vehicles": "Hantera fordon",
+    "violation": "Dhibiti ukiukwaji",
+    "control-fee": "Kontrollavgift",
+    "stats": "Statistik",
+    "latest-reports": "Senaste rapporterna",
+    "no-users": "Inga användare i systemet",
+    "no-makulera": "Inga makuleringar hittades för denna parkering",
+    "no-felparkering": "Inga felparkeringar hittades för denna parkering",
+    "no-reports": "Inga rapporter ännu",
+    "violation-location": "Platser",
+    "submit-violation": "Skicka in en överträdelse",
+    "parking-infos": "Parkeringsinfo"
+  },
+  "login": {
+    "login": "Logga in",
+    "logout": "Logga ut",
+    "sure-to-signout": "Är du säker på att du vill logga ut?",
+    "welcome": "Välkommen tillbaka 👋"
+  },
+  "manage-parking": {
+    "date": "Datum",
+    "days": "{{nbr}} dagar",
+    "expand-date": "Expandera datum",
+    "from": "Från",
+    "reference": "Registreringsnummer",
+    "remove": "Ta bort",
+    "submit": "Lägg till bil",
+    "sure-remove-user": "Är du säker på att du vill ta bort användaren?",
+    "time-left": "Återstående tid",
+    "title": "Hantera parkering",
+    "to": "Till"
+  },
+  "control": {
+    "towns": "Stad",
+    "towns-empty": "Inga stader tillgängliga",
+    "locations": "Plats",
+    "locations-empty": "Inga platser tillgängliga",
+    "violation": "Överträdelse",
+    "violation-empty": "Inga överträdelser tillgängliga",
+    "price": "Pris",
+    "submit": "Skicka in en överträdelse",
+    "preview": "Förhandsgranska",
+    "print": "Skriv ut",
+    "sign-checked": "Skylt kontrollerad",
+    "images-checked": "Bilder kontrollerade"
+  },
+  "not-found": "Ej tillhandahållet ännu",
+  "onboarding": {
+    "get-started": "Kom igång",
+    "language": "Språk",
+    "message": "Konfigurera din anpassade upplevelse",
+    "theme": "Tema",
+    "welcome": "Välkommen"
+  },
+  "parking": {
+    "Information": "P-information",
+    "Makulera": "Makulera",
+    "available": "{{nbr}} platser tillgängliga",
+    "felparkering": "Felparkering",
+    "manage": "P-tillstånd",
+    "max": "Stödjer max {{max}} platser",
+    "more": "Mer information",
+    "price": "{{price}}$/Timme",
+    "security": "Säkerhet ingår",
+    "taken": "Upptagna platser",
+    "title": "Min parkering",
+    "unavailable": "{{nbr}} platser otillgängliga",
+    "vehicle-control": "Kontrollavgift",
+    "wrong": "Felparkering"
+  },
+  "price-unit": {
+    "day": "Dag",
+    "hour": "Timme",
+    "month": "Månad",
+    "week": "Vecka"
+  },
+  "report": {
+    "desc-placeholder": "Beskriv vad du rapporterar...",
+    "disturbance-details": "Uppgifter om störning:",
+    "disturbing-tenant": "Störande hyresgäst/er:",
+    "note": "Den här fliken används för att lämna in ett klagomål om eventuella problem du kan ha. Supporten kommer att lösa klagomålet",
+    "note-label": "Notering",
+    "report-list": "Rapportlista",
+    "reporting-tenant": "Anmälande hyresgäst:",
+    "submit": "Skicka klagomålet",
+    "title": "Rapportera störning"
+  },
+  "report-status": {
+    "awaiting": "Väntar",
+    "refused": "Avvisad",
+    "resolved": "Löst"
+  },
+  "resolve": "Är du säker på att du vill lösa detta objekt?",
+  "role": {
+    "parking": "Parkering",
+    "restorer": "Restauratör"
+  },
+  "yes": "Ja",
+  "no": "Nej",
+  "controlFee": {
+    "details": {
+      "headerTitle": "Kontrollavgiftsdetaljer",
+      "notFound": "Kontrollavgift hittades inte.",
+      "generalInfo": {
+        "title": "Allmän information",
+        "reference": "Referens",
+        "vehicleMark": "Fordonsmärke",
+        "status": "Status",
+        "startDate": "Startdatum",
+        "endDate": "Slutdatum"
+      },
+      "location": {
+        "title": "Plats",
+        "address": "Adress",
+        "town": "Stad/Ort"
+      },
+      "violation": {
+        "title": "Överträdelsedetaljer",
+        "violation": "Överträdelse",
+        "location": "Överträdelseplats",
+        "price": "Pris"
+      },
+      "checks": {
+        "title": "Kontroller",
+        "signsChecked": "Skyltar kontrollerade",
+        "photosTaken": "Foton tagna"
+      },
+      "gallery": {
+        "title": "Galleri",
+        "noPhotos": "Inga foton tillgängliga."
+      },
+      "ticket": {
+        "title": "Biljett"
+      }
+    }
+  },
+  "common": {
+    "ok": "OK",
+    "save": "Spara",
+    "complete": "Slutför",
+    "delete": "Ta bort",
+    "completed": "Slutförd",
+    "saved": "Sparad"
+  },
+  "reference-detail": {
+    "delete-title": "Ta bort referens",
+    "delete-message": "Är du säker på att du vill ta bort denna referens? Denna åtgärd kan inte ångras.",
+    "complete-message": "Referens markerad som slutförd.",
+    "save-message": "Framsteg sparade lokalt."
+  },
+  "parking-info": {
+    "title": "Parkeringsinformation",
+    "working-hours": "Öppettider",
+    "general-info": "Allmän information",
+    "instructions": "Instruktioner",
+    "instructions-placeholder": "Ange parkeringsinstruktioner...",
+    "closed": "Stängt",
+    "edit": "Redigera info",
+    "save-success": "Parkeringsinformation uppdaterad",
+    "not-found": "Ingen parkeringsinformation tillgänglig"
+  },
+  "statistics": {
+    "title": "Statistik",
+    "day": "Dag",
+    "week": "Vecka",
+    "month": "Månad",
+    "no-data": "Ingen data tillgänglig för vald period",
+    "total": "Totalt",
+    "total-control-fees": "Totalt antal kontrollavgifter",
+    "control-fees-by-time": "Kontrollavgifter över tid",
+    "by-status": "Per status",
+    "status-breakdown": "Statusöversikt",
+    "awaiting": "Väntar",
+    "paid": "Betald",
+    "canceled": "Avbruten",
+    "conflict": "Konflikt",
+    "currently-parked": "För närvarande parkerade",
+    "total-vehicles": "Totalt antal fordon",
+    "violations": "Överträdelser",
+    "unresolved": "Olösta",
+    "resolved": "Lösta",
+    "by-type": "Per typ",
+    "felparkering": "Felparkering",
+    "makulera": "Makulerad"
+  }
+}
