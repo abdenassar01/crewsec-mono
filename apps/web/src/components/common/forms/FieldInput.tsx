@@ -30,6 +30,9 @@ export function FieldInput({ name, label, placeholder, type = "text", password, 
           if (type === "email" && stringValue && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(stringValue)) {
             return "Invalid email address";
           }
+          if (type === "url" && stringValue && !/^https?:\/\/.+/.test(stringValue)) {
+            return "Invalid URL (must start with http:// or https://)";
+          }
           return undefined;
         },
       }}

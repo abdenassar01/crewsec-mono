@@ -3,7 +3,6 @@
 import React, { type InputHTMLAttributes, useState } from 'react';
 import { useField } from '@tanstack/react-form';
 import { useFormContext } from '../form-context';
-import Image from 'next/image';
 import { cn } from '@/lib';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { EyeFreeIcons, ViewOffSlashIcon } from '@hugeicons/core-free-icons';

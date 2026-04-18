@@ -4,7 +4,6 @@ import React, { type ButtonHTMLAttributes, useRef, useState } from 'react';
 import { useField } from '@tanstack/react-form';
 import { useFormContext } from '../form-context';
 import { cn, useOutsideClick } from '@/lib';
-import Image from 'next/image';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { ArrowDown01FreeIcons, CheckmarkBadge01FreeIcons } from '@hugeicons/core-free-icons';
 
@@ -84,7 +83,7 @@ export function FieldSelect<T>({
                   key={extractValue(item)}
                   className="hover:bg-tertiary/10 relative cursor-pointer p-2"
                   onClick={() => {
-                    field.state.value = extractValue(item);
+                    field.handleChange(extractValue(item));
                     props.onChangeCallback && props.onChangeCallback(item);
                     setIsOpen(false);
                   }}

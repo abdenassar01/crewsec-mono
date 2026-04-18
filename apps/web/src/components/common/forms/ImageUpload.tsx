@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Upload01FreeIcons, Delete01FreeIcons } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -16,6 +16,10 @@ export function ImageUpload({ value, onChange, onRemove, disabled }: ImageUpload
   const [dragActive, setDragActive] = useState(false);
   const [preview, setPreview] = useState<string | null>(value || null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setPreview(value || null);
+  }, [value]);
 
   const handleFiles = (files: FileList | null) => {
     if (!files || files.length === 0) return;

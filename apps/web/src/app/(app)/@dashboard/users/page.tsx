@@ -12,7 +12,6 @@ import { UserFilters, type UserFilters as UserFiltersType } from "./user-filters
 import { getColumns } from "./columns";
 import { api } from "@convex/_generated/api";
 import type { Doc } from "@convex/_generated/dataModel";
-import { authClient } from "@/lib/auth-client";
 import { useSafeMutation, useSafePaginatedQuery } from "@/lib/hooks";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -35,6 +34,7 @@ export default function UserListClient() {
   );
 
   const updateUser = useSafeMutation(api.users.update);
+  const createUser = useSafeMutation(api.users.create);
   const deleteUser = useSafeMutation(api.users.deleteUser);
   const resetUserPassword = useSafeMutation(api.users.resetUserPassword);
 
@@ -143,7 +143,11 @@ export default function UserListClient() {
       if (!editingUser) return;
       const result = await updateUser({
         userId: editingUser._id,
-        ...data,
+        email: data.email,
+        name: data.name,
+        phone: data.phone,
+        role: data.role,
+        enabled: data.enabled,
       });
       if (result !== null) {
         toast.success("User updated successfully!");
@@ -151,15 +155,16 @@ export default function UserListClient() {
         setEditingUser(null);
       }
     } else {
-      try {
-        await authClient.signUp.email({
-          ...data,
-        });
+      const result = await createUser({
+        email: data.email,
+        password: data.password,
+        name: data.name,
+        role: data.role,
+      });
+      if (result !== null) {
         toast.success("New user created!");
         setIsDialogOpen(false);
         setEditingUser(null);
-      } catch (error: any) {
-        toast.error(error.message || "An error occurred.");
       }
     }
   };

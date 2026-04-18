@@ -1,15 +1,12 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "@tanstack/react-form";
 import { useQuery } from "convex/react";
 import { Button } from "@/components/ui/button";
 import { FieldInput, FormContext } from "@/components/common/forms";
 import { ImageUpload } from "@/components/common/forms/ImageUpload";
-import { useImageUrl } from "@/hooks/use-image-url";
-import { useMutation } from "convex/react";
 import { api } from "@convex/_generated/api";
-import type { Doc } from "@convex/_generated/dataModel";
 import type { Id } from "@convex/_generated/dataModel";
 import type { ParkingWithUser } from "./columns";
 import { useSafeMutation } from "@/lib/hooks";
@@ -18,13 +15,11 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
 type FormValues = {
-  // User fields
   email: string;
   name: string;
   phone?: string;
   role: "ADMIN" | "EMPLOYEE" | "CLIENT";
-  password?: string;
-  // Parking fields
+  password: string;
   parkingName: string;
   parkingDescription: string;
   parkingLocation: string;
@@ -41,12 +36,11 @@ type ParkingFormProps = {
 
 export function ParkingForm({ onSubmit, defaultValues, isPending }: ParkingFormProps) {
   const isEditMode = !!defaultValues;
-  const { getUrl } = useImageUrl();
   const deleteImage = useSafeMutation(api.parkings.deleteImage);
   const resetUserPassword = useSafeMutation(api.users.resetUserPassword);
   const [currentImage, setCurrentImage] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(
-    defaultValues?.imageStorageId ? getUrl(defaultValues.imageStorageId) : null
+    defaultValues?.imageUrl || null
   );
   const [showResetPassword, setShowResetPassword] = useState(false);
   const [newPassword, setNewPassword] = useState("");
@@ -61,27 +55,12 @@ export function ParkingForm({ onSubmit, defaultValues, isPending }: ParkingFormP
   // Extract data from CustomResponse
   const userData = userDataResult && 'data' in userDataResult ? userDataResult.data : userDataResult;
 
-  // Pre-fill user data from the query
-  const defaultUserValues = useMemo(() => {
-    if (isEditMode && userData && typeof userData === 'object' && 'email' in userData) {
-      return {
-        email: userData.email ?? "",
-        name: userData.name ?? "",
-        phone: userData.phone ?? "",
-        role: userData.role ?? "CLIENT",
-      };
-    }
-    return {
+  const form = useForm({
+    defaultValues: {
       email: "",
       name: "",
       phone: "",
-      role: "CLIENT" as const,
-    };
-  }, [isEditMode, userData]);
-
-  const form = useForm({
-    defaultValues: {
-      ...defaultUserValues,
+      role: "CLIENT" as "ADMIN" | "EMPLOYEE" | "CLIENT",
       password: "",
       parkingName: defaultValues?.name ?? "",
       parkingDescription: defaultValues?.description ?? "",
@@ -99,6 +78,20 @@ export function ParkingForm({ onSubmit, defaultValues, isPending }: ParkingFormP
     },
   });
 
+  // Sync user data into form when it arrives asynchronously
+  useEffect(() => {
+    if (isEditMode && userData && typeof userData === 'object' && 'email' in userData) {
+      form.reset({
+        ...form.state.values,
+        email: userData.email ?? "",
+        name: userData.name ?? "",
+        phone: userData.phone ?? "",
+        role: userData.role ?? "CLIENT",
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEditMode, userData]);
+
   const handleImageChange = (file: File | null) => {
     setCurrentImage(file);
     if (file) {
@@ -108,7 +101,7 @@ export function ParkingForm({ onSubmit, defaultValues, isPending }: ParkingFormP
       };
       reader.readAsDataURL(file);
     } else {
-      setPreviewUrl(defaultValues?.imageStorageId ? getUrl(defaultValues.imageStorageId) : null);
+      setPreviewUrl(defaultValues?.imageUrl || null);
     }
   };
 
@@ -149,6 +142,7 @@ export function ParkingForm({ onSubmit, defaultValues, isPending }: ParkingFormP
             type="email"
             form={form}
             disabled={isPending}
+            required
           />
           <FieldInput
             name="name"
@@ -156,6 +150,7 @@ export function ParkingForm({ onSubmit, defaultValues, isPending }: ParkingFormP
             placeholder="John Doe"
             form={form}
             disabled={isPending}
+            required
           />
           <FieldInput
             name="phone"
@@ -195,6 +190,7 @@ export function ParkingForm({ onSubmit, defaultValues, isPending }: ParkingFormP
                   placeholder="••••••••"
                   form={form}
                   disabled={isPending}
+                  required
                 />
               </div>
             )}
@@ -260,6 +256,7 @@ export function ParkingForm({ onSubmit, defaultValues, isPending }: ParkingFormP
             placeholder="Main Street Parking"
             form={form}
             disabled={isPending}
+            required
           />
           <FieldInput
             name="parkingAddress"
@@ -267,6 +264,7 @@ export function ParkingForm({ onSubmit, defaultValues, isPending }: ParkingFormP
             placeholder="123 Main St"
             form={form}
             disabled={isPending}
+            required
           />
           <FieldInput
             name="parkingLocation"
@@ -274,6 +272,7 @@ export function ParkingForm({ onSubmit, defaultValues, isPending }: ParkingFormP
             placeholder="Metropolis"
             form={form}
             disabled={isPending}
+            required
           />
           <FieldInput
             name="parkingWebsite"
@@ -282,6 +281,7 @@ export function ParkingForm({ onSubmit, defaultValues, isPending }: ParkingFormP
             type="url"
             form={form}
             disabled={isPending}
+            required
           />
           <FieldInput
             name="parkingDescription"
@@ -289,6 +289,7 @@ export function ParkingForm({ onSubmit, defaultValues, isPending }: ParkingFormP
             placeholder="A short description..."
             form={form}
             disabled={isPending}
+            required
           />
         </div>
 

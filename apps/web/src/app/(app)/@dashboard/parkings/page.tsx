@@ -21,6 +21,7 @@ export default function ParkingList() {
   const [editingParking, setEditingParking] = React.useState<ParkingWithUser | null>(null);
   const [resetPasswordParking, setResetPasswordParking] = React.useState<ParkingWithUser | null>(null);
   const [newPassword, setNewPassword] = React.useState("");
+  const [isPending, setIsPending] = React.useState(false);
   const [filters, setFilters] = React.useState<ParkingFiltersType>({
     searchTerm: "",
     location: "",
@@ -60,7 +61,7 @@ export default function ParkingList() {
     if (!parkings) return [];
     return parkings.filter((parking) => {
       // Hide anonymized parkings
-      if (parking.name.startsWith('[Anonymized')) {
+      if (parking.name?.startsWith('[Anonymized')) {
         return false;
       }
 
@@ -175,74 +176,78 @@ export default function ParkingList() {
   );
 
   const handleFormSubmit = async (data: any, isEdit: boolean) => {
-    let imageStorageId: Id<'_storage'> | null = null;
+    setIsPending(true);
+    try {
+      let imageStorageId: Id<'_storage'> | null = null;
 
-    // Handle image upload if present
-    if (data.parkingImage && data.parkingImage instanceof File) {
-      // Get upload URL
-      const uploadUrl = await getUploadUrl();
+      // Handle image upload if present
+      if (data.parkingImage && data.parkingImage instanceof File) {
+        // Get upload URL
+        const uploadUrl = await getUploadUrl();
 
-      if (!uploadUrl) {
-        toast.error("Failed to get upload URL");
-        return;
+        if (!uploadUrl) {
+          toast.error("Failed to get upload URL");
+          return;
+        }
+
+        // Upload file directly to the upload URL
+        const response = await fetch(uploadUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': data.parkingImage.type },
+          body: data.parkingImage,
+        });
+
+        if (response.ok) {
+          const { storageId } = await response.json();
+          imageStorageId = storageId;
+        } else {
+          toast.error('Failed to upload image');
+          return;
+        }
       }
 
-      // Upload file directly to the upload URL
-      const response = await fetch(uploadUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': data.parkingImage.type },
-        body: data.parkingImage,
-      });
-
-      if (response.ok) {
-        const { storageId } = await response.json();
-        imageStorageId = storageId;
+      if (isEdit) {
+        if (!editingParking) return;
+        const result = await updateParkingAndUser({
+          parkingId: editingParking._id,
+          email: data.email,
+          name: data.name,
+          phone: data.phone,
+          role: data.role,
+          parkingName: data.parkingName,
+          description: data.parkingDescription,
+          location: data.parkingLocation,
+          website: data.parkingWebsite,
+          address: data.parkingAddress,
+          imageStorageId: imageStorageId || editingParking.imageStorageId,
+        });
+        if (result !== null) {
+          toast.success("Parking and user updated successfully!");
+          setIsDialogOpen(false);
+          setEditingParking(null);
+        }
       } else {
-        toast.error('Failed to upload image');
-        return;
-      }
-    }
+        const result = await createUserAndParking({
+          email: data.email,
+          password: data.password,
+          role: data.role,
+          parkingName: data.parkingName,
+          parkingDescription: data.parkingDescription,
+          parkingLocation: data.parkingLocation,
+          parkingWebsite: data.parkingWebsite,
+          parkingAddress: data.parkingAddress,
+          imageStorageId: imageStorageId as Id<'_storage'>,
+          name: data.name
+        });
 
-    if (isEdit) {
-      if (!editingParking) return;
-      const result = await updateParkingAndUser({
-        parkingId: editingParking._id,
-        email: data.email,
-        name: data.name,
-        phone: data.phone,
-        role: data.role,
-        parkingName: data.parkingName,
-        description: data.parkingDescription,
-        location: data.parkingLocation,
-        website: data.parkingWebsite,
-        address: data.parkingAddress,
-        imageStorageId: imageStorageId || editingParking.imageStorageId,
-      });
-      if (result !== null) {
-        toast.success("Parking and user updated successfully!");
-        setIsDialogOpen(false);
-        setEditingParking(null);
+        if (result !== null) {
+          toast.success("New user and parking created!");
+          setIsDialogOpen(false);
+          setEditingParking(null);
+        }
       }
-    } else {
-      // For create, use the updated createUserAndParking with image support
-      const result = await createUserAndParking({
-        email: data.email,
-        password: data.password,
-        role: "CLIENT", // Default role for new parkings, or make it a form field
-        parkingName: data.parkingName,
-        parkingDescription: data.parkingDescription,
-        parkingLocation: data.parkingLocation,
-        parkingWebsite: data.parkingWebsite,
-        parkingAddress: data.parkingAddress,
-        imageStorageId: imageStorageId as Id<'_storage'>,
-        name: data.name
-      });
-
-      if (result !== null) {
-        toast.success("New user and parking created!");
-        setIsDialogOpen(false);
-        setEditingParking(null);
-      }
+    } finally {
+      setIsPending(false);
     }
   };
 
@@ -282,7 +287,7 @@ export default function ParkingList() {
             <ParkingForm
               onSubmit={handleFormSubmit}
               defaultValues={editingParking ?? undefined}
-              isPending={false}
+              isPending={isPending}
             />
           </DialogContent>
         </Dialog>
