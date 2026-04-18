@@ -17,9 +17,7 @@ export function VehicleList({ data, estimatedSize }: Props) {
     <>
       <FlashList
         contentContainerClassName="gap-2 pb-20"
-        numColumns={2}
         data={data}
-        ItemSeparatorComponent={() => <View className="h-2" />}
         renderItem={({ index, item }) => (
           <View key={item._id} className={cn('w-full mb-2', index % 2 === 0 ? 'pr-2' : '')}>
             <CarReservationCard vehicle={item} />

@@ -50,7 +50,7 @@ export function VehicleByParkingList({ id }: Props) {
         contentContainerClassName="gap-3"
       >
         <Input
-          className="-mb-2"
+          className="-mb-2 mt-3"
           placeholder={t('forms.reference')}
           value={query}
           onChangeText={(text) => setQuery(text)}

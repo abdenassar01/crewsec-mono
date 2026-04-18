@@ -65,12 +65,12 @@ export function ClientParkingForm({
   function next() {
     switch (currentStep) {
       case 1:
-        trigger(['email', 'name', 'phone']).then(
+        trigger(['email', 'password', 'name', 'phone']).then(
           (valid) => valid && setCurrentStep((prev) => prev + 1),
         );
         break;
       case 2:
-        trigger(['image', 'parkingName', 'description'])
+        trigger(['image', 'parkingName', 'website', 'description'])
           .then((valid) => valid && setCurrentStep((prev) => prev + 1))
           .catch((e) => console.log('Not Valid: ', e));
         break;
