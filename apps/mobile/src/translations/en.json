@@ -251,9 +251,6 @@
       "gallery": {
         "title": "Gallery",
         "noPhotos": "No photos available."
-      },
-      "ticket": {
-        "title": "Ticket"
       }
     }
   },
@@ -307,6 +304,12 @@
     "resolved": "Resolved",
     "by-type": "By Type",
     "felparkering": "Wrong Parking",
-    "makulera": "Canceled"
+    "makulera": "Canceled",
+    "by-agent": "By Agent",
+    "total-collected": "Total Collected",
+    "all-issued": "All control fees issued",
+    "successfully-paid": "Successfully paid",
+    "awaiting-payment": "Awaiting payment",
+    "total-amount-collected": "Total amount collected"
   }
 }

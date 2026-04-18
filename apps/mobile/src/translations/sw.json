@@ -307,6 +307,12 @@
     "resolved": "Lösta",
     "by-type": "Per typ",
     "felparkering": "Felparkering",
-    "makulera": "Makulerad"
+    "makulera": "Makulerad",
+    "by-agent": "Efter agent",
+    "total-collected": "Totalt insamlat",
+    "all-issued": "Alla utfärdade avgifter",
+    "successfully-paid": "Framgångsrikt betalda",
+    "awaiting-payment": "Väntar på betalning",
+    "total-amount-collected": "Totalt insamlat belopp"
   }
 }

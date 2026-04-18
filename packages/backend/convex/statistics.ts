@@ -1,6 +1,6 @@
 import { v } from 'convex/values';
 import { query } from './_generated/server';
-import { requireAdmin, getAuthenticatedUser } from './auth/helpers';
+import { requireAdmin, requireAdminOrEmployee, getAuthenticatedUser } from './auth/helpers';
 import { CustomResponse, failure, success, ErrorCodes } from './util';
 
 /**
@@ -306,9 +306,89 @@ export const getControlFeesByAgent = query({
   },
 });
 
-/**
- * Get vehicle statistics for current user's parking
- */
+export const getControlFeesStatistics = query({
+  args: {
+    startDate: v.optional(v.number()),
+    endDate: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    await requireAdminOrEmployee(ctx);
+    const now = Date.now();
+    const startDate = args.startDate ?? now - 30 * 24 * 60 * 60 * 1000;
+    const endDate = args.endDate ?? now;
+
+    const allFees = await ctx.db.query('controlFees').collect();
+    const filtered = allFees.filter(
+      (f) => f.startDate >= startDate && f.startDate <= endDate,
+    );
+
+    let totalCollected = 0;
+    await Promise.all(
+      filtered
+        .filter((f) => f.status === 'PAID')
+        .map(async (f) => {
+          const lv = await ctx.db.get(f.locationViolationId);
+          if (lv) totalCollected += lv.price ?? 0;
+        }),
+    );
+
+    return {
+      total: filtered.length,
+      paid: filtered.filter((f) => f.status === 'PAID').length,
+      unpaid: filtered.filter((f) => f.status === 'AWAITING').length,
+      canceled: filtered.filter((f) => f.status === 'CANCELED').length,
+      conflict: filtered.filter((f) => f.status === 'CONFLICT').length,
+      totalCollected,
+    };
+  },
+});
+
+export const getControlFeesEvolution = query({
+  args: {
+    startDate: v.optional(v.number()),
+    endDate: v.optional(v.number()),
+    groupBy: v.optional(v.union(v.literal('day'), v.literal('week'), v.literal('month'))),
+    status: v.optional(v.union(v.literal('AWAITING'), v.literal('PAID'), v.literal('CANCELED'), v.literal('CONFLICT'))),
+  },
+  handler: async (ctx, args) => {
+    await requireAdminOrEmployee(ctx);
+    const now = Date.now();
+    const startDate = args.startDate ?? now - 30 * 24 * 60 * 60 * 1000;
+    const endDate = args.endDate ?? now;
+    const groupBy = args.groupBy ?? 'day';
+
+    const allFees = await ctx.db.query('controlFees').collect();
+    let filtered = allFees.filter(
+      (f) => f.startDate >= startDate && f.startDate <= endDate,
+    );
+
+    if (args.status) {
+      filtered = filtered.filter((f) => f.status === args.status);
+    }
+
+    const groupedData: Record<string, number> = {};
+
+    filtered.forEach((fee) => {
+      const date = new Date(fee.startDate);
+      let key: string;
+
+      if (groupBy === 'day') {
+        key = date.toISOString().split('T')[0];
+      } else if (groupBy === 'week') {
+        key = `${date.getFullYear()}-W${String(getISOWeek(date)).padStart(2, '0')}`;
+      } else {
+        key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      }
+
+      groupedData[key] = (groupedData[key] || 0) + 1;
+    });
+
+    return Object.entries(groupedData)
+      .map(([label, value]) => ({ label, value }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  },
+});
+
 export const getMyParkingStats = query({
   handler: async (ctx): Promise<CustomResponse<any>> => {
     const user = await ctx.auth.getUserIdentity();
