@@ -64,7 +64,7 @@ export function LocationTab() {
           control={control}
           name="label"
           className="w-full"
-          wrapperClassName="w-[85%]"
+          wrapperClassName="w-[88%]"
         />
         <TouchableOpacity
           onPress={handleSubmit(onSubmit, (error) =>
@@ -76,7 +76,7 @@ export function LocationTab() {
             <ActivityIndicator color={colors.white} size="small" />
           ) : (
             <Image
-              className="aspect-square w-7"
+              className="aspect-square w-6 h-6"
               source={
                 colorScheme === 'dark'
                   ? require('assets/icons/dark/submit.png')

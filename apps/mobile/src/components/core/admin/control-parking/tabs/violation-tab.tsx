@@ -2,13 +2,12 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { api } from 'convex/_generated/api';
 import { useSafeQuery, useSafeMutation } from '@/hooks/use-convex-hooks';
-import { useColorScheme } from 'react-native';
 import React, { Fragment, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { useWindowDimensions } from 'react-native';
+import { useWindowDimensions, TouchableOpacity, useColorScheme } from 'react-native';
 import { showMessage } from 'react-native-flash-message';
-import { ScrollView, TouchableOpacity } from 'react-native-gesture-handler';
+import { ScrollView } from 'react-native-gesture-handler';
 
 import {
   ActivityIndicator,
@@ -57,19 +56,19 @@ export function ViolationTab() {
           control={control}
           name="label"
           className="w-full"
-          wrapperClassName="w-[85%]"
+          wrapperClassName="w-[88%]"
         />
         <TouchableOpacity
           onPress={handleSubmit(onSubmit, (error) =>
             console.log('error', error),
           )}
-          className="mt-3 rounded-full border bg-secondary p-2 dark:bg-primary"
+          className="mt-3 rounded-full bg-secondary p-2 dark:bg-primary"
         >
           {loading ? (
             <ActivityIndicator color={colors.white} size="small" />
           ) : (
             <Image
-              className="aspect-square w-7"
+              className="aspect-square w-6 h-6"
               source={
                 colorScheme === 'dark'
                   ? require('assets/icons/dark/submit.png')

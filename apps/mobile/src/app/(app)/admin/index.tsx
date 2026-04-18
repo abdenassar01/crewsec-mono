@@ -96,9 +96,9 @@ export default function AdminDashboard() {
     <RootWrapper className="container">
       <UpdateNotificationToken />
       <ManagerTopWidget />
-      <ScrollView showsVerticalScrollIndicator={false} className="mt-3" contentContainerClassName='pb-16'>
+      <ScrollView showsVerticalScrollIndicator={false} className="mt-3" contentContainerClassName=''>
         <ConfigurationPanel />
-        <View className="my-2 flex-row flex-wrap justify-between gap-y-2">
+        <View className="flex-row flex-wrap justify-between gap-y-2 mb-t">
           {tabs.map((tab) => (
             <TouchableOpacity
               key={`dashboard-item-${tab.title}`}
@@ -113,7 +113,7 @@ export default function AdminDashboard() {
                 resizeMode="contain"
                 source={tab.icon}
               />
-              <Text className="!text-xxs text-secondary text-center font-bold dark:text-yellow-400">
+              <Text className="text-xxs! text-secondary text-center font-bold dark:text-yellow-400">
                 {tab.title}
               </Text>
             </TouchableOpacity>

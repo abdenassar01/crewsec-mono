@@ -221,7 +221,7 @@ export const listViolations = query({
   args: {
     search: v.optional(v.string()),
   },
-  handler: async (ctx, args): Promise<CustomResponse<any>> => {
+  handler: async (ctx, args): Promise<CustomResponse<Doc<'violations'>[]>> => {
     const authUser = await authComponent.getAuthUser(ctx);
 
     if (!authUser) {
