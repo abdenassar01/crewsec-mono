@@ -17,7 +17,7 @@ export function StatCard({
   color,
 }: StatCardProps) {
   return (
-    <View className="flex-1 rounded-xl bg-white p-4 dark:bg-background-secondary-dark">
+    <View className="rounded-xl w-[48%] bg-white p-4 dark:bg-background-secondary-dark">
       <Text
         className="text-2xl font-bold"
         style={color ? { color } : undefined}

@@ -46,7 +46,7 @@ function WorkingHourRow({
           {day}
         </Text>
       </TouchableOpacity>
-      {isEditing && !isClosed ? (
+      {isEditing ? (
         <View className="flex-row items-center gap-2">
           <ControlledInput
             control={control as any}

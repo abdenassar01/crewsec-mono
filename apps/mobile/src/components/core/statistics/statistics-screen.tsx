@@ -182,8 +182,7 @@ export function StatisticsScreen() {
           />
         </View>
 
-        <View className="flex-row gap-2 my-2">
-          <View className="flex-1">
+        <View className="gap-2 my-2">
             <DistributionChart
               total={stats?.total ?? 0}
               paid={stats?.paid ?? 0}
@@ -191,10 +190,7 @@ export function StatisticsScreen() {
               canceled={stats?.canceled ?? 0}
               conflict={stats?.conflict ?? 0}
             />
-          </View>
-          <View className="flex-1">
             <AgentChart data={byAgentData ?? []} />
-          </View>
         </View>
 
         <TrendChart

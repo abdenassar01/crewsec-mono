@@ -5,7 +5,7 @@ import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { showMessage } from 'react-native-flash-message';
-import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
+import { KeyboardAvoidingView, KeyboardAwareScrollView } from 'react-native-keyboard-controller';
 import { ScrollView, View } from 'react-native';
 
 import { Header } from '@/components/common';
@@ -103,12 +103,12 @@ export function ParkingDetail({ parkingId, onBack }: ParkingDetailProps) {
   };
 
   return (
-    <View >
+    <KeyboardAvoidingView behavior='padding'>
       <Header title={parking.name || t('parking-info.title')} onBack={onBack} />
       <ScrollView
         
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingTop: 8, paddingBottom: 100 }}
+        contentContainerStyle={{ paddingTop: 8, paddingBottom: 48 }}
       >
         <ParkingHeaderCard
           imageUrl={parking.imageUrl}
@@ -137,19 +137,19 @@ export function ParkingDetail({ parkingId, onBack }: ParkingDetailProps) {
             <ParkingInstructionsView instructions={parking.instructions} />
           </>
         )}
-      </ScrollView>
 
-      <ParkingEditActions
-        isEditing={isEditing}
-        isSaving={isSaving}
-        canEdit={canEdit}
-        onEdit={() => setIsEditing(true)}
-        onCancel={() => {
-          reset();
-          setIsEditing(false);
-        }}
-        onSave={handleSubmit(onSubmit)}
-      />
-    </View>
+        <ParkingEditActions
+          isEditing={isEditing}
+          isSaving={isSaving}
+          canEdit={canEdit}
+          onEdit={() => setIsEditing(true)}
+          onCancel={() => {
+            reset();
+            setIsEditing(false);
+          }}
+          onSave={handleSubmit(onSubmit)}
+        />
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
