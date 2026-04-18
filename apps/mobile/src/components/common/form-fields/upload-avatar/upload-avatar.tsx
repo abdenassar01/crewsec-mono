@@ -117,13 +117,13 @@ export function UploadAvatar({
                     ? require('assets/icons/dark/avatar.png')
                     : require('assets/icons/light/avatar.png')
               }
-              className={cn('w-52 aspect-video rounded-xl', imgClassName)}
+              className={cn('w-full h-48 aspect-video rounded-xl', imgClassName)}
             />
           )}
           <Image
             source={require('assets/icons/upload.png')}
             className={cn(
-              'w-10 absolute -bottom-2 -right-2 aspect-square rounded-full',
+              'w-6 absolute -bottom-2 -right-2 aspect-square rounded-full',
               uploadIconClassName,
             )}
           />
