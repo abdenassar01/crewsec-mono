@@ -25,7 +25,7 @@ export function ParkingHeaderCard({
     <>
       {imageUrl ? (
         <Image
-          className="mb-3 h-40 w-full rounded-2xl"
+          className="mb-3 h-60 w-full rounded-2xl"
           source={{ uri: imageUrl }}
         />
       ) : null}

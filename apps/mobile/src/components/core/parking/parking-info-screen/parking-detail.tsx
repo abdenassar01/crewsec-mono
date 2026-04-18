@@ -35,7 +35,7 @@ export function ParkingDetail({ parkingId, onBack }: ParkingDetailProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  const { control, handleSubmit, reset } = useForm<ParkingInfoFormValues>({
+  const { control, handleSubmit, reset, setValue, watch } = useForm<ParkingInfoFormValues>({
     resolver: zodResolver(parkingInfoSchema),
     defaultValues: {
       phone: '',
@@ -103,9 +103,13 @@ export function ParkingDetail({ parkingId, onBack }: ParkingDetailProps) {
   };
 
   return (
-    <KeyboardAvoidingView keyboardVerticalOffset={0}>
+    <View >
       <Header title={parking.name || t('parking-info.title')} onBack={onBack} />
-      <ScrollView className="container mt-2 " showsVerticalScrollIndicator={false}>
+      <ScrollView
+        
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingTop: 8, paddingBottom: 100 }}
+      >
         <ParkingHeaderCard
           imageUrl={parking.imageUrl}
           name={parking.name}
@@ -117,6 +121,8 @@ export function ParkingDetail({ parkingId, onBack }: ParkingDetailProps) {
         <ParkingWorkingHours
           control={control}
           isEditing={isEditing}
+          setValue={setValue}
+          watch={watch}
         />
 
         {isEditing ? (
@@ -131,8 +137,6 @@ export function ParkingDetail({ parkingId, onBack }: ParkingDetailProps) {
             <ParkingInstructionsView instructions={parking.instructions} />
           </>
         )}
-
-        <View className="h-4" />
       </ScrollView>
 
       <ParkingEditActions
@@ -146,6 +150,6 @@ export function ParkingDetail({ parkingId, onBack }: ParkingDetailProps) {
         }}
         onSave={handleSubmit(onSubmit)}
       />
-    </KeyboardAvoidingView>
+    </View>
   );
 }

@@ -48,13 +48,12 @@ export function ParkingList({ onSelect }: ParkingListProps) {
       <FlashList
         data={data}
         numColumns={2}
-        ItemSeparatorComponent={() => <View className='w-2 h-full' />}
-        contentContainerClassName="justify-between gap-2 pb-20"
+        contentContainerStyle={{ paddingBottom: 20 }}
         keyExtractor={(item) => item._id}
         renderItem={(item) => (
           <TouchableOpacity
             onPress={() => onSelect(item.item._id)}
-            className="mb-2 rounded-xl border border-secondary/10 bg-background-secondary p-1 dark:bg-background-secondary-dark"
+            className="mb-3 mr-2 flex-1 rounded-xl border border-secondary/10 bg-background-secondary p-1 dark:bg-background-secondary-dark"
           >
             <Image
               source={{ uri: item.item.imageUrl || undefined }}

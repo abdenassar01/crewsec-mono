@@ -1,4 +1,4 @@
-import { type Control, useController, useWatch } from 'react-hook-form';
+import { type Control, type UseFormSetValue, type UseFormWatch } from 'react-hook-form';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { TouchableOpacity, View } from 'react-native';
@@ -9,6 +9,8 @@ import { CARD_CLASS, type ParkingInfoFormValues } from './shared';
 interface ParkingWorkingHoursProps {
   control: Control<ParkingInfoFormValues>;
   isEditing: boolean;
+  setValue: UseFormSetValue<ParkingInfoFormValues>;
+  watch: UseFormWatch<ParkingInfoFormValues>;
 }
 
 function WorkingHourRow({
@@ -16,19 +18,23 @@ function WorkingHourRow({
   index,
   day,
   isEditing,
+  setValue,
+  watch,
 }: {
   control: Control<ParkingInfoFormValues>;
   index: number;
   day: string;
   isEditing: boolean;
+  setValue: UseFormSetValue<ParkingInfoFormValues>;
+  watch: UseFormWatch<ParkingInfoFormValues>;
 }) {
   const { t } = useTranslation();
-  const { field: closedField } = useController({ control, name: `workingHours.${index}.closed` });
-  const wh = useWatch({ control, name: `workingHours.${index}` });
-  const isClosed = closedField.value ?? false;
+  const wh = watch(`workingHours.${index}`);
+  const isClosed = wh?.closed ?? false;
 
   const handleToggle = () => {
-    closedField.onChange(!isClosed);
+    const current = watch(`workingHours.${index}.closed`) ?? false;
+    setValue(`workingHours.${index}.closed`, !current, { shouldDirty: true });
   };
 
   return (
@@ -43,7 +49,7 @@ function WorkingHourRow({
       {isEditing && !isClosed ? (
         <View className="flex-row items-center gap-2">
           <ControlledInput
-            control={control}
+            control={control as any}
             name={`workingHours.${index}.open`}
             placeholder="08:00"
             keyboardType="number-pad"
@@ -51,7 +57,7 @@ function WorkingHourRow({
           />
           <Text className="text-xs text-gray-400">-</Text>
           <ControlledInput
-            control={control}
+            control={control as any}
             name={`workingHours.${index}.close`}
             placeholder="18:00"
             keyboardType="number-pad"
@@ -69,22 +75,24 @@ function WorkingHourRow({
   );
 }
 
-export function ParkingWorkingHours({ control, isEditing }: ParkingWorkingHoursProps) {
+export function ParkingWorkingHours({ control, isEditing, setValue, watch }: ParkingWorkingHoursProps) {
   const { t } = useTranslation();
-  const fields = useWatch({ control, name: 'workingHours' }) ?? [];
+  const workingHours = watch('workingHours') ?? [];
 
   return (
     <View className={CARD_CLASS}>
       <Text className="mb-3 text-base font-bold text-secondary dark:text-yellow-400">
         {t('parking-info.working-hours')}
       </Text>
-      {fields.map((field, index) => (
+      {workingHours.map((field: any, index: number) => (
         <WorkingHourRow
           key={`${field.day}-${index}`}
           control={control}
           index={index}
           day={field.day}
           isEditing={isEditing}
+          setValue={setValue}
+          watch={watch}
         />
       ))}
     </View>

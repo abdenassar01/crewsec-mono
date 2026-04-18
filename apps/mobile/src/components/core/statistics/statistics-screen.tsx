@@ -98,7 +98,7 @@ export function StatisticsScreen() {
       <Header title={t('statistics.title')} />
       <ScrollView
         className="container mt-4"
-        contentContainerClassName="gap-3"
+        contentContainerClassName="gap-2"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 40 }}
       >
@@ -131,7 +131,7 @@ export function StatisticsScreen() {
           </View>
         </View>
 
-        <View className="flex-row justify-between rounded-full bg-white p-1 dark:bg-background-secondary-dark">
+        <View className="flex-row justify-between rounded-full bg-white p-1 dark:bg-background-secondary-dark my-2">
           {statTabs.map((tab) => (
             <TouchableOpacity
               key={tab}
@@ -182,7 +182,7 @@ export function StatisticsScreen() {
           />
         </View>
 
-        <View className="flex-row gap-2">
+        <View className="flex-row gap-2 my-2">
           <View className="flex-1">
             <DistributionChart
               total={stats?.total ?? 0}

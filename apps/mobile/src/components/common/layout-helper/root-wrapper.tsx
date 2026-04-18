@@ -14,7 +14,7 @@ export function RootWrapper({
   return (
     <View
       style={{ paddingHorizontal: Platform.OS === 'web' ? 8 : 0 }}
-      className={cn('pt-16', className)}
+      className={cn('pt-16 flex-1', className)}
     >
       {children}
     </View>

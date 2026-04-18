@@ -22,7 +22,7 @@ export function ParkingInfoScreen() {
   }
 
   return (
-    <View className="">
+    <View className="gap-2">
       <Header title={t('parking-info.title')} />
       <ParkingList onSelect={setSelectedParking} />
     </View>

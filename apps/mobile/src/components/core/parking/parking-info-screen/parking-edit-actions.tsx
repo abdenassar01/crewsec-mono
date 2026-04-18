@@ -1,10 +1,8 @@
-import { type UseFormHandleSubmit } from 'react-hook-form';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { TouchableOpacity, View } from 'react-native';
 
 import { Button, Text } from '@/components/ui';
-import { type ParkingInfoFormValues } from './shared';
 
 interface ParkingEditActionsProps {
   isEditing: boolean;
@@ -28,17 +26,17 @@ export function ParkingEditActions({
   if (!canEdit) return null;
 
   return (
-    <View className="mb-6 mt-2">
+    <View className="mb-4">
       {isEditing ? (
-        <View className="flex-row justify-between">
+        <View className="flex-row gap-2">
           <Button
-            className="w-[48%]"
+            className="flex-1"
             onPress={onCancel}
             label={t('cancel')}
             variant="secondary"
           />
           <Button
-            className="w-[48%]"
+            className="flex-1"
             onPress={onSave}
             disabled={isSaving}
             label={isSaving ? t('forms.updating') : t('common.save')}
