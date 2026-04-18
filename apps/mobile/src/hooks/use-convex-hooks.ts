@@ -1,4 +1,5 @@
 import {
+  useAction as useConvexAction,
   useMutation as useConvexMutation,
   useQuery as useConvexQuery,
 } from 'convex/react';
@@ -69,6 +70,33 @@ export function useSafeMutation<T extends FunctionReference<'mutation'>>(
       }
     },
     [mutation],
+  );
+}
+
+export function useSafeAction<T extends FunctionReference<'action'>>(
+  actionReference: T,
+) {
+  const action = useConvexAction(actionReference);
+
+  return useCallback(
+    async (...args: OptionalRestArgs<T>): Promise<any> => {
+      try {
+        const result = await action(...args);
+
+        if (isErrorResponse(result)) {
+          showErrorMessage(`${result.error.code}: ${result.error.message}`);
+          return null;
+        }
+
+        return result?.data ?? result;
+      } catch (err: unknown) {
+        const message =
+          err instanceof Error ? err.message : 'Network error occurred';
+        showErrorMessage(message);
+        return null;
+      }
+    },
+    [action],
   );
 }
 

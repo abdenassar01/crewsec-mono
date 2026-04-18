@@ -55,7 +55,7 @@ export const getColumns = (
     },
   },
   {
-    accessorKey: "parking.name",
+    id: "parking",
     header: "Parking",
     cell: ({ row }) => (
       <div className="font-mono text-sm">{row.original.parking?.name || "N/A"}</div>

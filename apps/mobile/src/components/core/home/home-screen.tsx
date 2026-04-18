@@ -1,6 +1,6 @@
 /* eslint-disable max-lines-per-function */
 import { api } from 'convex/_generated/api';
-import { useSafeQuery, useSafeMutation } from '@/hooks/use-convex-hooks';
+import { useSafeQuery, useSafeAction } from '@/hooks/use-convex-hooks';
 import { useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -23,7 +23,7 @@ export function HomeScreen() {
   const { dismiss, present, ref } = useModal();
   const { hasBluetoothPermissions, requestBluetoothPermissions } =
     useBluetoothStatus();
-  const sendNotification = useSafeMutation(
+  const sendNotification = useSafeAction(
     api.notifications.sendPushNotificationToAdmins,
   );
   useEffect(() => {
@@ -122,7 +122,13 @@ export function HomeScreen() {
 
             <Button
               className="w-32"
-              onPress={() => sendNotification({ title: '', body: 'djsgd' })}
+              onPress={() => {
+                sendNotification({
+                  title: 'Larm',
+                  body: `Larm utlöst från parkering: ${parking?.name || 'Okänd'}`,
+                });
+                dismiss();
+              }}
               label={t('yes')}
             />
           </View>

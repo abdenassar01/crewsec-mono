@@ -1,13 +1,8 @@
-import { PushNotifications } from '@convex-dev/expo-push-notifications';
 import { v } from 'convex/values';
 
-import { components } from './_generated/api';
-import { mutation, query } from './_generated/server';
+import { api } from './_generated/api';
+import { action, mutation, query } from './_generated/server';
 import { getAuthenticatedUser } from './auth/helpers';
-
-const pushNotifications = new PushNotifications(components.pushNotifications, {
-  logLevel: 'DEBUG',
-});
 
 export const recordPushNotificationToken = mutation({
   args: {
@@ -31,37 +26,21 @@ export const recordPushNotificationToken = mutation({
       .first();
 
     if (existing) {
-      // Update lastUsed timestamp
       await ctx.db.patch(existing._id, {
         lastUsed: Date.now(),
         deviceId: args.deviceId ?? existing.deviceId,
       });
     } else {
-      // Record new token with the package
-      await pushNotifications.recordToken(ctx, {
+      await ctx.db.insert('pushNotificationParams', {
         userId: user._id,
-        pushToken: args.token,
+        expoPushToken: args.token,
+        deviceId: args.deviceId,
+        lastUsed: Date.now(),
       });
-
-      // Also store additional metadata
-      const newEntries = await ctx.db
-        .query('pushNotificationParams')
-        .withIndex('by_userId_and_token', (q) =>
-          q.eq('userId', user._id).eq('expoPushToken', args.token),
-        )
-        .collect();
-
-      if (newEntries.length > 0) {
-        await ctx.db.patch(newEntries[0]._id, {
-          deviceId: args.deviceId,
-          lastUsed: Date.now(),
-        });
-      }
     }
   },
 });
 
-// Get all push notification tokens for the current user
 export const getMyPushTokens = query({
   handler: async (ctx) => {
     const user = await getAuthenticatedUser(ctx);
@@ -84,7 +63,6 @@ export const getMyPushTokens = query({
   },
 });
 
-// Remove a specific push notification token
 export const removePushNotificationToken = mutation({
   args: { tokenId: v.id('pushNotificationParams') },
   handler: async (ctx, args) => {
@@ -94,59 +72,44 @@ export const removePushNotificationToken = mutation({
       throw Error('Not Authenticated');
     }
 
-    // Verify the token belongs to the user
     const token = await ctx.db.get(args.tokenId);
     if (!token || token.userId !== user._id) {
       throw Error('Token not found or not authorized');
     }
 
-    // First remove through the package
-    await pushNotifications.deleteNotificationsForUser(ctx, {
-      userId: user._id,
-    });
-
-    // Then delete from our table
     await ctx.db.delete(args.tokenId);
   },
 });
 
-export const sendPushNotification = mutation({
-  args: { title: v.string(), to: v.id('users'), body: v.optional(v.string()) },
+export const getTokensForUserIds = query({
+  args: { userIds: v.array(v.id('users')) },
   handler: async (ctx, args) => {
-    return await pushNotifications.sendPushNotification(ctx, {
-      userId: args.to,
-      notification: {
-        title: args.title,
-        body: args.body,
-      },
-    });
+    const allTokens: string[] = [];
+    for (const userId of args.userIds) {
+      const tokens = await ctx.db
+        .query('pushNotificationParams')
+        .withIndex('by_userId', (q) => q.eq('userId', userId))
+        .collect();
+      for (const t of tokens) {
+        allTokens.push(t.expoPushToken);
+      }
+    }
+    return allTokens;
   },
 });
 
-export const sendPushNotificationToAdmins = mutation({
-  args: { title: v.string(), body: v.optional(v.string()) },
-  handler: async (ctx, args) => {
+export const getAdminUserIds = query({
+  handler: async (ctx) => {
     const admins = await ctx.db
       .query('users')
       .withIndex('by_role', (q) => q.eq('role', 'ADMIN'))
       .collect();
-
-    await Promise.all(
-      admins.map((admin) =>
-        pushNotifications.sendPushNotification(ctx, {
-          userId: admin._id,
-          notification: { title: args.title, body: args.body },
-        }),
-      ),
-    );
-
-    return 'Notification sent to admins';
+    return admins.map((a) => a._id);
   },
 });
 
-export const sendPushNotificationToManagers = mutation({
-  args: { title: v.string(), body: v.optional(v.string()) },
-  handler: async (ctx, args) => {
+export const getManagerUserIds = query({
+  handler: async (ctx) => {
     const admins = await ctx.db
       .query('users')
       .withIndex('by_role', (q) => q.eq('role', 'ADMIN'))
@@ -157,16 +120,77 @@ export const sendPushNotificationToManagers = mutation({
       .withIndex('by_role', (q) => q.eq('role', 'EMPLOYEE'))
       .collect();
 
-    const managers = [...admins, ...employees];
+    return [...admins, ...employees].map((m) => m._id);
+  },
+});
 
-    await Promise.all(
-      managers.map((manager) =>
-        pushNotifications.sendPushNotification(ctx, {
-          userId: manager._id,
-          notification: { title: args.title, body: args.body },
-        }),
-      ),
-    );
+async function sendToExpoPushAPI(
+  tokens: string[],
+  title: string,
+  body?: string,
+) {
+  if (tokens.length === 0) return;
+
+  const messages = tokens.map((token) => ({
+    to: token,
+    sound: 'default' as const,
+    title,
+    body: body ?? '',
+  }));
+
+  const CHUNK_SIZE = 100;
+  const chunks: (typeof messages)[] = [];
+  for (let i = 0; i < messages.length; i += CHUNK_SIZE) {
+    chunks.push(messages.slice(i, i + CHUNK_SIZE));
+  }
+
+  for (const chunk of chunks) {
+    await fetch('https://exp.host/--/api/v2/push/send', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify(chunk),
+    });
+  }
+}
+
+export const sendPushNotification = action({
+  args: {
+    title: v.string(),
+    to: v.id('users'),
+    body: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const tokens = await ctx.runQuery(api.notifications.getTokensForUserIds, {
+      userIds: [args.to],
+    });
+    await sendToExpoPushAPI(tokens, args.title, args.body ?? undefined);
+  },
+});
+
+export const sendPushNotificationToAdmins = action({
+  args: { title: v.string(), body: v.optional(v.string()) },
+  handler: async (ctx, args) => {
+    const userIds = await ctx.runQuery(api.notifications.getAdminUserIds);
+    const tokens = await ctx.runQuery(api.notifications.getTokensForUserIds, {
+      userIds,
+    });
+    await sendToExpoPushAPI(tokens, args.title, args.body ?? undefined);
+
+    return 'Notification sent to admins';
+  },
+});
+
+export const sendPushNotificationToManagers = action({
+  args: { title: v.string(), body: v.optional(v.string()) },
+  handler: async (ctx, args) => {
+    const userIds = await ctx.runQuery(api.notifications.getManagerUserIds);
+    const tokens = await ctx.runQuery(api.notifications.getTokensForUserIds, {
+      userIds,
+    });
+    await sendToExpoPushAPI(tokens, args.title, args.body ?? undefined);
 
     return 'Notification sent to admins and employees';
   },

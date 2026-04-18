@@ -3,6 +3,7 @@ import { useConvexAuth } from 'convex/react';
 import { Redirect, SplashScreen, Stack } from 'expo-router';
 import React, { useCallback, useEffect } from 'react';
 
+import { UpdateNotificationToken } from '@/components/core';
 import { ActivityIndicator, View } from '@/components/ui';
 import { useIsFirstTime } from '@/lib';
 
@@ -35,15 +36,18 @@ export default function MainLayout() {
   }
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="index" />
-      <Stack.Screen name="admin" />
-      <Stack.Screen name="vehicle-control" />
-      <Stack.Screen name="restorer-new-vehicle" />
-      <Stack.Screen name="felparkering/index" />
-      <Stack.Screen name="manage-parking" />
-      <Stack.Screen name="makulera/index" />
-      <Stack.Screen name="parking" />
-    </Stack>
+    <>
+      <UpdateNotificationToken />
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="index" />
+        <Stack.Screen name="admin" />
+        <Stack.Screen name="vehicle-control" />
+        <Stack.Screen name="restorer-new-vehicle" />
+        <Stack.Screen name="felparkering/index" />
+        <Stack.Screen name="manage-parking" />
+        <Stack.Screen name="makulera/index" />
+        <Stack.Screen name="parking" />
+      </Stack>
+    </>
   );
 }

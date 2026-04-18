@@ -9,7 +9,6 @@ import { ConfigurationPanel, RootWrapper } from '@/components/common';
 import {
   CurrentLocationSection,
   ManagerTopWidget,
-  UpdateNotificationToken,
 } from '@/components/core';
 import { ScrollView, Text, TouchableOpacity, View } from '@/components/ui';
 
@@ -94,7 +93,6 @@ export default function AdminDashboard() {
 
   return (
     <RootWrapper className="container">
-      <UpdateNotificationToken />
       <ManagerTopWidget />
       <ScrollView showsVerticalScrollIndicator={false} className="mt-3" contentContainerClassName='pb-10'>
         <ConfigurationPanel />

@@ -10,9 +10,9 @@ import { showMessage } from 'react-native-flash-message';
 import { ConfigurationPanel } from '@/components/common';
 import { Button, Image, Modal, Text, useModal } from '@/components/ui';
 import { useUser } from '@/hooks';
-import { useSafeMutation } from '@/hooks/use-convex-hooks';
+import { useSafeAction } from '@/hooks/use-convex-hooks';
 
-import { ManagerTopWidget, UpdateNotificationToken } from '../admin';
+import { ManagerTopWidget } from '../admin';
 import { CurrentLocationSection } from '../home';
 
 export function EmployeeScreen() {
@@ -21,7 +21,7 @@ export function EmployeeScreen() {
   const { user } = useUser();
   const { push } = useRouter();
   const { dismiss, present, ref } = useModal();
-  const sendNotification = useSafeMutation(
+  const sendNotification = useSafeAction(
     api.notifications.sendPushNotificationToAdmins,
   );
 
@@ -76,7 +76,6 @@ export function EmployeeScreen() {
 
   return (
     <View className="container">
-      <UpdateNotificationToken />
       <View className="mt-3">
         <ManagerTopWidget />
         <View className="my-3 flex-row flex-wrap justify-between gap-y-2">
