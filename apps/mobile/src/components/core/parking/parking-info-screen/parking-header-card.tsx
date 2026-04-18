@@ -1,5 +1,5 @@
 import React from 'react';
-import { useColorScheme } from 'react-native';
+import { Linking, useColorScheme } from 'react-native';
 
 import { Image, Text, View } from '@/components/ui';
 import { CARD_CLASS } from './shared';
@@ -55,7 +55,15 @@ export function ParkingHeaderCard({
           </Text>
         ) : null}
         {website ? (
-          <Text className="mt-1 text-xs text-blue-500">{website}</Text>
+          <Text
+            className="mt-1 text-xs text-blue-500"
+            onPress={() => {
+              const url = website.startsWith('http') ? website : `https://${website}`;
+              Linking.openURL(url);
+            }}
+          >
+            {website}
+          </Text>
         ) : null}
       </View>
     </>

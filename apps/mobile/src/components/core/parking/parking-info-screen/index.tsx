@@ -24,9 +24,7 @@ export function ParkingInfoScreen() {
   return (
     <View className="">
       <Header title={t('parking-info.title')} />
-      <View className="container mt-2">
-        <ParkingList onSelect={setSelectedParking} />
-      </View>
+      <ParkingList onSelect={setSelectedParking} />
     </View>
   );
 }

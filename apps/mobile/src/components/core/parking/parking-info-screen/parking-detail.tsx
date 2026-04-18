@@ -35,7 +35,7 @@ export function ParkingDetail({ parkingId, onBack }: ParkingDetailProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  const { control, handleSubmit, reset, setValue } = useForm<ParkingInfoFormValues>({
+  const { control, handleSubmit, reset } = useForm<ParkingInfoFormValues>({
     resolver: zodResolver(parkingInfoSchema),
     defaultValues: {
       phone: '',
@@ -68,7 +68,7 @@ export function ParkingDetail({ parkingId, onBack }: ParkingDetailProps) {
 
   if (parking === undefined) {
     return (
-      <View className="flex-1 items-center justify-center">
+      <View className="items-center justify-center">
         <ActivityIndicator color={colors.secondary} size={50} />
       </View>
     );
@@ -76,7 +76,7 @@ export function ParkingDetail({ parkingId, onBack }: ParkingDetailProps) {
 
   if (!parking) {
     return (
-      <View className="flex-1 items-center justify-center p-4">
+      <View className="items-center justify-center p-4">
         <Text className="text-center text-text dark:text-gray-100">
           {t('parking-info.not-found')}
         </Text>
@@ -102,15 +102,10 @@ export function ParkingDetail({ parkingId, onBack }: ParkingDetailProps) {
     }
   };
 
-  const handleToggleDay = (index: number) => {
-    const current = control._formValues.workingHours?.[index]?.closed ?? false;
-    setValue(`workingHours.${index}.closed`, !current);
-  };
-
   return (
-    <KeyboardAvoidingView behavior="padding" keyboardVerticalOffset={100}>
+    <KeyboardAvoidingView keyboardVerticalOffset={0}>
       <Header title={parking.name || t('parking-info.title')} onBack={onBack} />
-      <ScrollView className="container mt-2" showsVerticalScrollIndicator={false}>
+      <ScrollView className="container mt-2 " showsVerticalScrollIndicator={false}>
         <ParkingHeaderCard
           imageUrl={parking.imageUrl}
           name={parking.name}
@@ -122,7 +117,6 @@ export function ParkingDetail({ parkingId, onBack }: ParkingDetailProps) {
         <ParkingWorkingHours
           control={control}
           isEditing={isEditing}
-          onToggleDay={handleToggleDay}
         />
 
         {isEditing ? (
@@ -138,20 +132,20 @@ export function ParkingDetail({ parkingId, onBack }: ParkingDetailProps) {
           </>
         )}
 
-        <ParkingEditActions
-          isEditing={isEditing}
-          isSaving={isSaving}
-          canEdit={canEdit}
-          onEdit={() => setIsEditing(true)}
-          onCancel={() => {
-            reset();
-            setIsEditing(false);
-          }}
-          onSave={handleSubmit(onSubmit)}
-        />
-
-        <View className="h-24" />
+        <View className="h-4" />
       </ScrollView>
+
+      <ParkingEditActions
+        isEditing={isEditing}
+        isSaving={isSaving}
+        canEdit={canEdit}
+        onEdit={() => setIsEditing(true)}
+        onCancel={() => {
+          reset();
+          setIsEditing(false);
+        }}
+        onSave={handleSubmit(onSubmit)}
+      />
     </KeyboardAvoidingView>
   );
 }

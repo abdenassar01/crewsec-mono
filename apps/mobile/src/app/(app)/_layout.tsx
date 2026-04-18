@@ -39,12 +39,9 @@ export default function MainLayout() {
       <Stack.Screen name="index" />
       <Stack.Screen name="admin" />
       <Stack.Screen name="vehicle-control" />
-      <Stack.Screen name="report/index" />
       <Stack.Screen name="restorer-new-vehicle" />
-      <Stack.Screen name="report/[id]" />
       <Stack.Screen name="felparkering/index" />
       <Stack.Screen name="manage-parking" />
-      <Stack.Screen name="reports-list" />
       <Stack.Screen name="makulera/index" />
       <Stack.Screen name="parking" />
     </Stack>

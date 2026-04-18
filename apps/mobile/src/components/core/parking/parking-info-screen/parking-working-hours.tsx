@@ -1,4 +1,4 @@
-import { type Control, useWatch, useController } from 'react-hook-form';
+import { type Control, useController, useWatch } from 'react-hook-form';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { TouchableOpacity, View } from 'react-native';
@@ -9,7 +9,6 @@ import { CARD_CLASS, type ParkingInfoFormValues } from './shared';
 interface ParkingWorkingHoursProps {
   control: Control<ParkingInfoFormValues>;
   isEditing: boolean;
-  onToggleDay: (index: number) => void;
 }
 
 function WorkingHourRow({
@@ -17,21 +16,24 @@ function WorkingHourRow({
   index,
   day,
   isEditing,
-  onToggle,
 }: {
   control: Control<ParkingInfoFormValues>;
   index: number;
   day: string;
   isEditing: boolean;
-  onToggle: () => void;
 }) {
   const { t } = useTranslation();
+  const { field: closedField } = useController({ control, name: `workingHours.${index}.closed` });
   const wh = useWatch({ control, name: `workingHours.${index}` });
-  const isClosed = wh?.closed ?? false;
+  const isClosed = closedField.value ?? false;
+
+  const handleToggle = () => {
+    closedField.onChange(!isClosed);
+  };
 
   return (
     <View className="mb-2 flex-row items-center justify-between">
-      <TouchableOpacity onPress={() => isEditing && onToggle()} className="w-24">
+      <TouchableOpacity onPress={() => isEditing && handleToggle()} className="w-24">
         <Text
           className={`text-sm ${isClosed ? 'text-gray-400 line-through dark:text-gray-600' : 'font-semibold text-text dark:text-white'}`}
         >
@@ -67,11 +69,7 @@ function WorkingHourRow({
   );
 }
 
-export function ParkingWorkingHours({
-  control,
-  isEditing,
-  onToggleDay,
-}: ParkingWorkingHoursProps) {
+export function ParkingWorkingHours({ control, isEditing }: ParkingWorkingHoursProps) {
   const { t } = useTranslation();
   const fields = useWatch({ control, name: 'workingHours' }) ?? [];
 
@@ -87,7 +85,6 @@ export function ParkingWorkingHours({
           index={index}
           day={field.day}
           isEditing={isEditing}
-          onToggle={() => onToggleDay(index)}
         />
       ))}
     </View>

@@ -30,15 +30,15 @@ export function ParkingEditActions({
   return (
     <View className="mb-6 mt-2">
       {isEditing ? (
-        <View className="flex-row gap-2">
+        <View className="flex-row justify-between">
           <Button
-            className=""
+            className="w-[48%]"
             onPress={onCancel}
             label={t('cancel')}
             variant="secondary"
           />
           <Button
-            className=""
+            className="w-[48%]"
             onPress={onSave}
             disabled={isSaving}
             label={isSaving ? t('forms.updating') : t('common.save')}

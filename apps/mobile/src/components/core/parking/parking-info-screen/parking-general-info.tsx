@@ -1,23 +1,34 @@
 import { type Control } from 'react-hook-form';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { View } from 'react-native';
+import { Linking, View } from 'react-native';
 
 import { ControlledInput, Text } from '@/components/ui';
 import { CARD_CLASS, type ParkingInfoFormValues } from './shared';
 
-interface InfoRowProps {
-  label: string;
-  value: string;
-}
-
-function InfoRow({ label, value }: InfoRowProps) {
+function InfoRow({ label, value }: { label: string; value: string }) {
   return (
     <View className="mb-2 flex-row items-center gap-2">
       <Text className="w-24 text-xs font-semibold text-text dark:text-gray-300">
         {label}
       </Text>
       <Text className="text-xs text-text dark:text-gray-100">{value}</Text>
+    </View>
+  );
+}
+
+function ClickableRow({ label, value, url }: { label: string; value: string; url: string }) {
+  return (
+    <View className="mb-2 flex-row items-center gap-2">
+      <Text className="w-24 text-xs font-semibold text-text dark:text-gray-300">
+        {label}
+      </Text>
+      <Text
+        className="text-xs text-blue-500"
+        onPress={() => Linking.openURL(url)}
+      >
+        {value}
+      </Text>
     </View>
   );
 }
@@ -40,8 +51,16 @@ export function ParkingGeneralInfoView({
       <Text className="mb-3 text-base font-bold text-secondary dark:text-yellow-400">
         {t('parking-info.general-info')}
       </Text>
-      <InfoRow label={t('forms.phone')} value={phone || t('not-found')} />
-      <InfoRow label={t('forms.email')} value={email || t('not-found')} />
+      {phone ? (
+        <ClickableRow label={t('forms.phone')} value={phone} url={`tel:${phone}`} />
+      ) : (
+        <InfoRow label={t('forms.phone')} value={t('not-found')} />
+      )}
+      {email ? (
+        <ClickableRow label={t('forms.email')} value={email} url={`mailto:${email}`} />
+      ) : (
+        <InfoRow label={t('forms.email')} value={t('not-found')} />
+      )}
       <InfoRow
         label={t('forms.capacity')}
         value={maxCapacity ? `${maxCapacity}` : t('not-found')}

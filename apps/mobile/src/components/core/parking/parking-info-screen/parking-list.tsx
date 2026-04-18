@@ -48,8 +48,8 @@ export function ParkingList({ onSelect }: ParkingListProps) {
       <FlashList
         data={data}
         numColumns={2}
-        ItemSeparatorComponent={() => <View className='w-1 h-full' />}
-        contentContainerClassName="gap-2 pb-20"
+        ItemSeparatorComponent={() => <View className='w-2 h-full' />}
+        contentContainerClassName="justify-between gap-2 pb-20"
         keyExtractor={(item) => item._id}
         renderItem={(item) => (
           <TouchableOpacity

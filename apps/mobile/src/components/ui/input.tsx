@@ -25,7 +25,7 @@ const inputTv = tv({
     container: 'mb-4',
     label: 'mb-1.5 text-sm font-medium text-gray-700 dark:text-gray-200',
     input:
-      'h-10 rounded-xl border border-gray-300 bg-white px-3 text-sm text-black placeholder:text-gray-400 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500',
+      'h-12 rounded-xl border border-gray-300 bg-white px-3 text-sm text-black placeholder:text-gray-400 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder:text-gray-500',
   },
 
   variants: {
