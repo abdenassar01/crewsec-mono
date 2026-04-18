@@ -4,10 +4,11 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import React, { useEffect, useState } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { useColorScheme, TextInput } from 'react-native';
+import { useColorScheme } from 'react-native';
 import { showMessage } from 'react-native-flash-message';
 import { z } from 'zod';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
+import { type Id } from 'convex/_generated/dataModel';
 
 import { Header } from '@/components/common';
 import {
@@ -15,6 +16,7 @@ import {
   Button,
   ControlledInput,
   Image,
+  Input,
   ScrollView,
   Text,
   TouchableOpacity,
@@ -23,6 +25,10 @@ import {
 } from '@/components/ui';
 import { useUser } from '@/hooks';
 import { useSafeMutation, useSafeQuery } from '@/hooks/use-convex-hooks';
+import { FlashList } from '@shopify/flash-list';
+import { useWindowDimensions } from 'react-native';
+import { primary } from '@/components/ui/colors';
+import { truncateString } from '@/lib';
 
 const workingDaySchema = z.object({
   day: z.string(),
@@ -51,13 +57,86 @@ const DEFAULT_WORKING_HOURS = [
   { day: 'Sunday', open: '09:00', close: '14:00', closed: true },
 ];
 
-export function ParkingInfoScreen() {
+function ParkingList({
+  onSelect,
+}: {
+  onSelect: (id: Id<'parkings'>) => void;
+}) {
+  const { t } = useTranslation();
+  const { height } = useWindowDimensions();
+  const [searchText, setSearchText] = useState('');
+  const data = useSafeQuery(api.parkings.list, { query: searchText });
+
+  if (data === undefined && !searchText) {
+    return (
+      <View className="mt-3 w-full items-center justify-center rounded-xl bg-white p-4 dark:bg-background-secondary-dark">
+        <ActivityIndicator size={40} color={primary} />
+      </View>
+    );
+  }
+
+  if (!data || data.length === 0) {
+    return (
+      <View className="mt-5 items-center">
+        <Text className="text-center font-bold text-secondary">
+          {t('admin.no-users')}
+        </Text>
+      </View>
+    );
+  }
+
+  return (
+    <ScrollView
+      showsVerticalScrollIndicator={false}
+      style={{ height: height - 140 }}
+    >
+      <Input
+        value={searchText}
+        placeholder={`${t('forms.query')}...`}
+        onChangeText={(text: string) => setSearchText(text)}
+      />
+      <FlashList
+        data={data}
+        numColumns={2}
+        contentContainerClassName="gap-2 pb-20"
+        keyExtractor={(item) => item._id}
+        renderItem={(item) => (
+          <TouchableOpacity
+            onPress={() => onSelect(item.item._id)}
+            className="mb-2 rounded-xl border border-secondary/10 bg-background-secondary p-1 dark:bg-background-secondary-dark"
+          >
+            <Image
+              source={{ uri: item.item.imageUrl || undefined }}
+              className="aspect-video w-full rounded-lg"
+            />
+            <View className="p-1">
+              <Text className="font-bold text-secondary" numberOfLines={1}>
+                {item.item.name}
+              </Text>
+              <Text className="text-xs" numberOfLines={1}>
+                {truncateString(item.item.address, 20)}
+              </Text>
+            </View>
+          </TouchableOpacity>
+        )}
+      />
+    </ScrollView>
+  );
+}
+
+function ParkingDetail({
+  parkingId,
+  onBack,
+}: {
+  parkingId: Id<'parkings'>;
+  onBack: () => void;
+}) {
   const { t } = useTranslation();
   const colorScheme = useColorScheme();
   const { user } = useUser();
-  const isAdmin = user?.role === 'ADMIN';
+  const canEdit = user?.role === 'ADMIN' || user?.role === 'EMPLOYEE';
 
-  const parking = useSafeQuery(api.parkings.getMyParking);
+  const parking = useSafeQuery(api.parkings.getParkingInfo, { parkingId });
   const updateParkingInfo = useSafeMutation(api.parkings.updateParkingInfo);
 
   const [isEditing, setIsEditing] = useState(false);
@@ -81,16 +160,15 @@ export function ParkingInfoScreen() {
   });
 
   useEffect(() => {
-    if (parking?.parking) {
-      const p = parking.parking;
+    if (parking) {
       reset({
-        phone: p.phone || '',
-        email: p.email || '',
-        maxCapacity: p.maxCapacity?.toString() || '',
-        instructions: p.instructions || '',
+        phone: parking.phone || '',
+        email: parking.email || '',
+        maxCapacity: parking.maxCapacity?.toString() || '',
+        instructions: parking.instructions || '',
         workingHours:
-          p.workingHours && p.workingHours.length > 0
-            ? p.workingHours.map((wh: any) => ({
+          parking.workingHours && parking.workingHours.length > 0
+            ? parking.workingHours.map((wh: any) => ({
                 day: String(wh.day ?? ''),
                 open: String(wh.open ?? ''),
                 close: String(wh.close ?? ''),
@@ -103,15 +181,15 @@ export function ParkingInfoScreen() {
 
   if (parking === undefined) {
     return (
-      <View className="flex-1 items-center justify-center">
+      <View className=" items-center justify-center">
         <ActivityIndicator color={colors.secondary} size={50} />
       </View>
     );
   }
 
-  if (!parking?.parking) {
+  if (!parking) {
     return (
-      <View className="flex-1 items-center justify-center p-4">
+      <View className=" items-center justify-center p-4">
         <Text className="text-center text-text dark:text-gray-100">
           {t('parking-info.not-found')}
         </Text>
@@ -122,7 +200,7 @@ export function ParkingInfoScreen() {
   const onSubmit = async (data: ParkingInfoFormValues) => {
     setIsSaving(true);
     const result = await updateParkingInfo({
-      parkingId: parking.parking._id,
+      parkingId: parking._id,
       workingHours: data.workingHours,
       phone: data.phone || undefined,
       email: data.email || undefined,
@@ -150,12 +228,12 @@ export function ParkingInfoScreen() {
 
   return (
     <KeyboardAvoidingView behavior="padding" keyboardVerticalOffset={100}>
-      <Header title={t('parking-info.title')} />
+      <Header title={parking.name || t('parking-info.title')} onBack={onBack} />
       <ScrollView className="container mt-2" showsVerticalScrollIndicator={false}>
-        {parking.parking.imageUrl ? (
+        {parking.imageUrl ? (
           <Image
             className="mb-3 h-40 w-full rounded-2xl"
-            source={{ uri: parking.parking.imageUrl }}
+            source={{ uri: parking.imageUrl }}
           />
         ) : null}
 
@@ -170,20 +248,20 @@ export function ParkingInfoScreen() {
               }
             />
             <Text className="text-lg font-bold text-secondary dark:text-yellow-400">
-              {parking.parking.name}
+              {parking.name}
             </Text>
           </View>
           <Text className="text-xs text-text dark:text-gray-100">
-            {parking.parking.description}
+            {parking.description}
           </Text>
-          {parking.parking.address ? (
+          {parking.address ? (
             <Text className="mt-1 text-xs text-text dark:text-gray-300">
-              {parking.parking.address}
+              {parking.address}
             </Text>
           ) : null}
-          {parking.parking.website ? (
+          {parking.website ? (
             <Text className="mt-1 text-xs text-blue-500">
-              {parking.parking.website}
+              {parking.website}
             </Text>
           ) : null}
         </View>
@@ -293,7 +371,7 @@ export function ParkingInfoScreen() {
                 {t('forms.phone')}
               </Text>
               <Text className="text-xs text-text dark:text-gray-100">
-                {parking.parking.phone || t('not-found')}
+                {parking.phone || t('not-found')}
               </Text>
             </View>
 
@@ -302,7 +380,7 @@ export function ParkingInfoScreen() {
                 {t('forms.email')}
               </Text>
               <Text className="text-xs text-text dark:text-gray-100">
-                {parking.parking.email || t('not-found')}
+                {parking.email || t('not-found')}
               </Text>
             </View>
 
@@ -311,31 +389,31 @@ export function ParkingInfoScreen() {
                 {t('forms.capacity')}
               </Text>
               <Text className="text-xs text-text dark:text-gray-100">
-                {parking.parking.maxCapacity
-                  ? `${parking.parking.maxCapacity}`
+                {parking.maxCapacity
+                  ? `${parking.maxCapacity}`
                   : t('not-found')}
               </Text>
             </View>
           </View>
         )}
 
-        {parking.parking.instructions && !isEditing && (
+        {parking.instructions && !isEditing && (
           <View className={cardClass}>
             <Text className="mb-2 text-base font-bold text-secondary dark:text-yellow-400">
               {t('parking-info.instructions')}
             </Text>
             <Text className="text-xs text-text dark:text-gray-100">
-              {parking.parking.instructions}
+              {parking.instructions}
             </Text>
           </View>
         )}
 
-        {isAdmin && (
+        {canEdit && (
           <View className="mb-6 mt-2">
             {isEditing ? (
               <View className="flex-row gap-2">
                 <Button
-                  className="flex-1"
+                  className=""
                   onPress={() => {
                     reset();
                     setIsEditing(false);
@@ -344,7 +422,7 @@ export function ParkingInfoScreen() {
                   variant="secondary"
                 />
                 <Button
-                  className="flex-1"
+                  className=""
                   onPress={handleSubmit(onSubmit)}
                   disabled={isSaving}
                   label={isSaving ? t('forms.updating') : t('common.save')}
@@ -363,8 +441,31 @@ export function ParkingInfoScreen() {
           </View>
         )}
 
-        <View className="h-10" />
+        <View className="h-24" />
       </ScrollView>
     </KeyboardAvoidingView>
+  );
+}
+
+export function ParkingInfoScreen() {
+  const { t } = useTranslation();
+  const [selectedParking, setSelectedParking] = useState<Id<'parkings'> | null>(null);
+
+  if (selectedParking) {
+    return (
+      <ParkingDetail
+        parkingId={selectedParking}
+        onBack={() => setSelectedParking(null)}
+      />
+    );
+  }
+
+  return (
+    <View className="">
+      <Header title={t('parking-info.title')} />
+      <View className="container mt-2">
+        <ParkingList onSelect={setSelectedParking} />
+      </View>
+    </View>
   );
 }

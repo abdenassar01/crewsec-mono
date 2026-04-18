@@ -137,6 +137,7 @@ export function CurrentLocationSection() {
             )}
           </MapView>
         )}
+      <View className='h-24' />
       </View>
     </>
   );

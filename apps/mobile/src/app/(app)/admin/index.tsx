@@ -96,7 +96,7 @@ export default function AdminDashboard() {
     <RootWrapper className="container">
       <UpdateNotificationToken />
       <ManagerTopWidget />
-      <ScrollView showsVerticalScrollIndicator={false} className="mt-3" contentContainerClassName=''>
+      <ScrollView showsVerticalScrollIndicator={false} className="mt-3" contentContainerClassName='pb-10'>
         <ConfigurationPanel />
         <View className="flex-row flex-wrap justify-between gap-y-2 mt-2">
           {tabs.map((tab) => (

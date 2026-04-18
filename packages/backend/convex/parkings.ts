@@ -5,7 +5,7 @@ import { v } from 'convex/values';
 import { type Id } from './_generated/dataModel';
 import { mutation, query } from './_generated/server';
 import { authComponent, createAuth } from './auth';
-import { AdminAuthError, getAuthenticatedUser, requireAdmin } from './auth/helpers';
+import { AdminAuthError, getAuthenticatedUser, requireAdmin, requireAdminOrEmployee } from './auth/helpers';
 import { type CustomResponse, ErrorCodes, failure, success } from './util';
 
 export const list = query({
@@ -623,14 +623,7 @@ export const updateParkingInfo = mutation({
     instructions: v.optional(v.string()),
   },
   handler: async (ctx, args): Promise<CustomResponse<{ success: boolean }>> => {
-    try {
-      await requireAdmin(ctx);
-    } catch (e) {
-      if (e instanceof AdminAuthError) {
-        return failure('Admin role required', ErrorCodes.FORBIDDEN);
-      }
-      throw e;
-    }
+    await requireAdminOrEmployee(ctx);
 
     const parking = await ctx.db.get(args.parkingId);
     if (!parking) {
