@@ -120,34 +120,32 @@ export function CalendarField({ control, name, callback }: Props) {
 
   function handleDayPress(day: DateData) {
     try {
-      if (!value || value.length < 1) {
+      if (!value || value.length <= 1) {
         onChange([day.dateString]);
       } else {
-        const lastDay = getLastDay();
         const firstDay = getFirstDay();
+        const lastDay = getLastDay();
 
-        if (!lastDay || !firstDay) {
+        if (day.dateString === firstDay || day.dateString === lastDay) {
           onChange([day.dateString]);
           callback && callback();
           return;
         }
 
-        const last =
-          new Date(day.dateString) > new Date(lastDay)
-            ? day.dateString
-            : lastDay;
-
-        const first =
+        const newFirst =
           new Date(day.dateString) < new Date(firstDay)
             ? day.dateString
             : firstDay;
 
-        onChange(getDates(new Date(first), new Date(last)));
+        const newLast =
+          new Date(day.dateString) > new Date(lastDay)
+            ? day.dateString
+            : lastDay;
+
+        onChange(getDates(new Date(newFirst), new Date(newLast)));
       }
       callback && callback();
     } catch (error) {
-      console.error('Error in handleDayPress:', error);
-      // Fallback to just setting the single date
       onChange([day.dateString]);
       callback && callback();
     }

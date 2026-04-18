@@ -10,9 +10,10 @@ type Props = {
   title: string;
   className?: string;
   onBack?: () => void;
+  rightAction?: React.ReactNode;
 };
 
-export function Header({ title, className, onBack }: Props) {
+export function Header({ title, className, onBack, rightAction }: Props) {
   const { back: routerBack } = useRouter();
   const handleBack = onBack || routerBack;
 
@@ -27,6 +28,7 @@ export function Header({ title, className, onBack }: Props) {
         <Ionicons name="chevron-back-outline" size={20} color={secondary} />
       </TouchableOpacity>
       <Text className="text-black font-bold dark:text-white">{title}</Text>
+      {rightAction && <View className="ml-auto">{rightAction}</View>}
     </View>
   );
 }

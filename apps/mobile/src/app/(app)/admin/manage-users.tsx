@@ -9,13 +9,15 @@ import {
   UserManagementParkingsList,
   UserManagementUsersList,
 } from '@/components/core';
-import { Text, TouchableOpacity, View, Image } from '@/components/ui';
+import { Text, TouchableOpacity, View, Image, Modal, useModal, Button } from '@/components/ui';
 import { cn } from '@/lib';
+import { authClient } from '@/lib/auth/auth-client';
 
 export default function ManageUsers() {
   const { t } = useTranslation();
   const colorScheme = useColorScheme();
   const { push } = useRouter();
+  const { dismiss, present, ref } = useModal();
 
   const [currentTab, setCurrentTab] = useState<
     'parkings' | 'employees' | 'admins'
@@ -23,7 +25,44 @@ export default function ManageUsers() {
 
   return (
     <RootWrapper className="container flex-1">
-      <Header title={t('admin.users')} />
+      <Header
+        title={t('admin.users')}
+        rightAction={
+          <TouchableOpacity
+            onPress={present}
+            className="rounded-xl bg-[#FF306B20] p-1.5"
+          >
+            <Image
+              source={require('assets/icons/logout.png')}
+              className="aspect-square size-6"
+            />
+          </TouchableOpacity>
+        }
+      />
+      <Modal index={0} snapPoints={['17%', '25%']} ref={ref}>
+        <View className="justify-center p-3">
+          <Text className="text-center text-xs">
+            {t('login.sure-to-signout')}
+          </Text>
+          <View className="mt-2 flex-row justify-center gap-2">
+            <Button
+              className="w-32"
+              onPress={dismiss}
+              label={t('cancel')}
+              variant="secondary"
+            />
+            <Button
+              className="w-32"
+              onPress={() =>
+                authClient.signOut().then(() => {
+                  dismiss();
+                })
+              }
+              label={t('yes')}
+            />
+          </View>
+        </View>
+      </Modal>
       <TouchableOpacity
         onPress={() => push('/admin/add-user')}
         className="absolute bottom-6 right-2 z-10 rounded-full bg-secondary p-4 dark:bg-primary"

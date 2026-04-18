@@ -27,7 +27,7 @@ const PRESETS = [
 
 export function StatisticsScreen() {
   const { t } = useTranslation();
-  const { control, watch } = useForm();
+  const { control, setValue, watch } = useForm();
   const [selectedTab, setSelectedTab] = useState<StatPeriod>('day');
   const [activePreset, setActivePreset] = useState<string>('30d');
 
@@ -45,6 +45,15 @@ export function StatisticsScreen() {
 
   const handlePreset = (days: number, key: string) => {
     setActivePreset(key);
+    const end = moment().endOf('day').toISOString().slice(0, 10);
+    const start = moment().subtract(days - 1, 'days').toISOString().slice(0, 10);
+    const rangeDates: string[] = [];
+    const current = moment(start);
+    while (current.isSameOrBefore(end)) {
+      rangeDates.push(current.format('YYYY-MM-DD'));
+      current.add(1, 'day');
+    }
+    setValue('dateRange', rangeDates);
   };
 
   const stats = useSafeQuery(api.statistics.getControlFeesStatistics, {
