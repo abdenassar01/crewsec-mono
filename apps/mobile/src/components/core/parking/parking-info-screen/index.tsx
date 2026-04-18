@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useColorScheme, TextInput } from 'react-native';
 import { showMessage } from 'react-native-flash-message';
 
-import { Header } from '@/components/common';
+import { Header, RootWrapper } from '@/components/common';
 import {
   ActivityIndicator,
   Image,
@@ -69,7 +69,7 @@ export function ParkingInfoScreen() {
 
   if (parking === undefined) {
     return (
-      <View className="flex-1 items-center justify-center">
+      <View className=" items-center justify-center">
         <ActivityIndicator color={colors.secondary} size={50} />
       </View>
     );
@@ -77,7 +77,7 @@ export function ParkingInfoScreen() {
 
   if (!parking?.parking) {
     return (
-      <View className="flex-1 items-center justify-center p-4">
+      <View className=" items-center justify-center p-4">
         <Text className="text-center text-text dark:text-gray-100">
           {t('parking-info.not-found')}
         </Text>
@@ -125,13 +125,10 @@ export function ParkingInfoScreen() {
     );
   };
 
-  const cardClass =
-    'w-full rounded-2xl bg-background-secondary dark:bg-background-secondary-dark p-4 mb-3';
-
   return (
-    <View className="flex-1">
+    <View className="">
       <Header title={t('parking-info.title')} />
-      <ScrollView className="container mt-2" showsVerticalScrollIndicator={false}>
+      <ScrollView showsVerticalScrollIndicator={false}>
         {parking.parking.imageUrl ? (
           <Image
             className="mb-3 h-40 w-full rounded-2xl"
@@ -139,7 +136,7 @@ export function ParkingInfoScreen() {
           />
         ) : null}
 
-        <View className={cardClass}>
+        <View className="w-full rounded-2xl bg-background-secondary dark:bg-background-secondary-dark p-4 mb-3">
           <View className="mb-2 flex-row items-center gap-2">
             <Image
               className="size-5"
@@ -168,7 +165,7 @@ export function ParkingInfoScreen() {
           ) : null}
         </View>
 
-        <View className={cardClass}>
+        <View className='w-full rounded-2xl bg-background-secondary dark:bg-background-secondary-dark p-4 mb-3'>
           <Text className="mb-3 text-base font-bold text-secondary dark:text-yellow-400">
             {t('parking-info.working-hours')}
           </Text>
@@ -192,7 +189,7 @@ export function ParkingInfoScreen() {
                 <View className="flex-row items-center gap-2">
                   <TextInput
                     className="w-16 rounded-lg bg-white px-2 py-1 text-center text-xs dark:bg-gray-800 dark:text-white"
-                    value={wh.open}
+                    value={String(wh.open ?? '')}
                     onChangeText={(v) => handleTimeChange(index, 'open', v)}
                     placeholder="08:00"
                     keyboardType="number-pad"
@@ -200,7 +197,7 @@ export function ParkingInfoScreen() {
                   <Text className="text-xs text-gray-400">-</Text>
                   <TextInput
                     className="w-16 rounded-lg bg-white px-2 py-1 text-center text-xs dark:bg-gray-800 dark:text-white"
-                    value={wh.close}
+                    value={String(wh.close ?? '')}
                     onChangeText={(v) => handleTimeChange(index, 'close', v)}
                     placeholder="18:00"
                     keyboardType="number-pad"
@@ -219,7 +216,7 @@ export function ParkingInfoScreen() {
           ))}
         </View>
 
-        <View className={cardClass}>
+        <View className="w-full rounded-2xl bg-background-secondary dark:bg-background-secondary-dark p-4 mb-3">
           <Text className="mb-3 text-base font-bold text-secondary dark:text-yellow-400">
             {t('parking-info.general-info')}
           </Text>
@@ -230,14 +227,14 @@ export function ParkingInfoScreen() {
             </Text>
             {isEditing ? (
               <TextInput
-                className="flex-1 rounded-lg bg-white px-2 py-1 text-xs dark:bg-gray-800 dark:text-white"
+                className=" rounded-lg bg-white px-2 py-1 text-xs dark:bg-gray-800 dark:text-white"
                 value={phone}
                 onChangeText={setPhone}
                 placeholder="+46 ..."
                 keyboardType="phone-pad"
               />
             ) : (
-              <Text className="flex-1 text-xs text-text dark:text-gray-100">
+              <Text className=" text-xs text-text dark:text-gray-100">
                 {phone || t('not-found')}
               </Text>
             )}
@@ -249,7 +246,7 @@ export function ParkingInfoScreen() {
             </Text>
             {isEditing ? (
               <TextInput
-                className="flex-1 rounded-lg bg-white px-2 py-1 text-xs dark:bg-gray-800 dark:text-white"
+                className=" rounded-lg bg-white px-2 py-1 text-xs dark:bg-gray-800 dark:text-white"
                 value={email}
                 onChangeText={setEmail}
                 placeholder="info@parking.se"
@@ -257,7 +254,7 @@ export function ParkingInfoScreen() {
                 autoCapitalize="none"
               />
             ) : (
-              <Text className="flex-1 text-xs text-text dark:text-gray-100">
+              <Text className=" text-xs text-text dark:text-gray-100">
                 {email || t('not-found')}
               </Text>
             )}
@@ -284,7 +281,7 @@ export function ParkingInfoScreen() {
         </View>
 
         {parking.parking.instructions || isEditing ? (
-          <View className={cardClass}>
+          <View className='w-full rounded-2xl bg-background-secondary dark:bg-background-secondary-dark p-4 mb-3'>
             <Text className="mb-2 text-base font-bold text-secondary dark:text-yellow-400">
               {t('parking-info.instructions')}
             </Text>
@@ -312,7 +309,7 @@ export function ParkingInfoScreen() {
               <View className="flex-row gap-2">
                 <TouchableOpacity
                   onPress={() => setIsEditing(false)}
-                  className="flex-1 items-center rounded-xl bg-gray-200 p-3 dark:bg-gray-700"
+                  className=" items-center rounded-xl bg-gray-200 p-3 dark:bg-gray-700"
                 >
                   <Text className="font-bold text-text dark:text-white">
                     {t('cancel')}
@@ -321,7 +318,7 @@ export function ParkingInfoScreen() {
                 <TouchableOpacity
                   onPress={handleSave}
                   disabled={isSaving}
-                  className="flex-1 items-center rounded-xl bg-secondary p-3"
+                  className=" items-center rounded-xl bg-secondary p-3"
                 >
                   <Text className="font-bold text-white">
                     {isSaving

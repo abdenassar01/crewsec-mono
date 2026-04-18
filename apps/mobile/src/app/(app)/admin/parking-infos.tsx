@@ -5,7 +5,7 @@ import { ParkingInfoScreen } from '@/components/core';
 
 export default function ParkingInfos() {
   return (
-    <RootWrapper>
+    <RootWrapper className='container'>
       <ParkingInfoScreen />
     </RootWrapper>
   );
