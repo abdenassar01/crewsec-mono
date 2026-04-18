@@ -1,13 +1,19 @@
 /* eslint-disable max-lines-per-function */
 import { api } from 'convex/_generated/api';
+import { zodResolver } from '@hookform/resolvers/zod';
 import React, { useEffect, useState } from 'react';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useColorScheme, TextInput } from 'react-native';
 import { showMessage } from 'react-native-flash-message';
+import { z } from 'zod';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 
-import { Header, RootWrapper } from '@/components/common';
+import { Header } from '@/components/common';
 import {
   ActivityIndicator,
+  Button,
+  ControlledInput,
   Image,
   ScrollView,
   Text,
@@ -18,20 +24,30 @@ import {
 import { useUser } from '@/hooks';
 import { useSafeMutation, useSafeQuery } from '@/hooks/use-convex-hooks';
 
-interface WorkingDay {
-  day: string;
-  open: string;
-  close: string;
-  closed?: boolean;
-}
+const workingDaySchema = z.object({
+  day: z.string(),
+  open: z.string(),
+  close: z.string(),
+  closed: z.boolean().optional(),
+});
 
-const DEFAULT_WORKING_HOURS: WorkingDay[] = [
-  { day: 'Monday', open: '08:00', close: '18:00' },
-  { day: 'Tuesday', open: '08:00', close: '18:00' },
-  { day: 'Wednesday', open: '08:00', close: '18:00' },
-  { day: 'Thursday', open: '08:00', close: '18:00' },
-  { day: 'Friday', open: '08:00', close: '18:00' },
-  { day: 'Saturday', open: '09:00', close: '14:00' },
+const parkingInfoSchema = z.object({
+  phone: z.string().optional(),
+  email: z.string().email().optional().or(z.literal('')),
+  maxCapacity: z.string().optional(),
+  instructions: z.string().optional(),
+  workingHours: z.array(workingDaySchema),
+});
+
+type ParkingInfoFormValues = z.infer<typeof parkingInfoSchema>;
+
+const DEFAULT_WORKING_HOURS = [
+  { day: 'Monday', open: '08:00', close: '18:00', closed: false },
+  { day: 'Tuesday', open: '08:00', close: '18:00', closed: false },
+  { day: 'Wednesday', open: '08:00', close: '18:00', closed: false },
+  { day: 'Thursday', open: '08:00', close: '18:00', closed: false },
+  { day: 'Friday', open: '08:00', close: '18:00', closed: false },
+  { day: 'Saturday', open: '09:00', close: '14:00', closed: false },
   { day: 'Sunday', open: '09:00', close: '14:00', closed: true },
 ];
 
@@ -44,32 +60,50 @@ export function ParkingInfoScreen() {
   const parking = useSafeQuery(api.parkings.getMyParking);
   const updateParkingInfo = useSafeMutation(api.parkings.updateParkingInfo);
 
-  const [workingHours, setWorkingHours] = useState<WorkingDay[]>([]);
-  const [phone, setPhone] = useState('');
-  const [email, setEmail] = useState('');
-  const [maxCapacity, setMaxCapacity] = useState('');
-  const [instructions, setInstructions] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  const { control, handleSubmit, reset, watch, setValue } =
+    useForm<ParkingInfoFormValues>({
+      resolver: zodResolver(parkingInfoSchema),
+      defaultValues: {
+        phone: '',
+        email: '',
+        maxCapacity: '',
+        instructions: '',
+        workingHours: DEFAULT_WORKING_HOURS,
+      },
+    });
+
+  const { fields } = useFieldArray({
+    control,
+    name: 'workingHours',
+  });
 
   useEffect(() => {
     if (parking?.parking) {
       const p = parking.parking;
-      setWorkingHours(
-        p.workingHours && p.workingHours.length > 0
-          ? p.workingHours
-          : DEFAULT_WORKING_HOURS,
-      );
-      setPhone(p.phone || '');
-      setEmail(p.email || '');
-      setMaxCapacity(p.maxCapacity?.toString() || '');
-      setInstructions(p.instructions || '');
+      reset({
+        phone: p.phone || '',
+        email: p.email || '',
+        maxCapacity: p.maxCapacity?.toString() || '',
+        instructions: p.instructions || '',
+        workingHours:
+          p.workingHours && p.workingHours.length > 0
+            ? p.workingHours.map((wh: any) => ({
+                day: String(wh.day ?? ''),
+                open: String(wh.open ?? ''),
+                close: String(wh.close ?? ''),
+                closed: wh.closed ?? false,
+              }))
+            : DEFAULT_WORKING_HOURS,
+      });
     }
-  }, [parking]);
+  }, [parking, reset]);
 
   if (parking === undefined) {
     return (
-      <View className=" items-center justify-center">
+      <View className="flex-1 items-center justify-center">
         <ActivityIndicator color={colors.secondary} size={50} />
       </View>
     );
@@ -77,7 +111,7 @@ export function ParkingInfoScreen() {
 
   if (!parking?.parking) {
     return (
-      <View className=" items-center justify-center p-4">
+      <View className="flex-1 items-center justify-center p-4">
         <Text className="text-center text-text dark:text-gray-100">
           {t('parking-info.not-found')}
         </Text>
@@ -85,15 +119,15 @@ export function ParkingInfoScreen() {
     );
   }
 
-  const handleSave = async () => {
+  const onSubmit = async (data: ParkingInfoFormValues) => {
     setIsSaving(true);
     const result = await updateParkingInfo({
       parkingId: parking.parking._id,
-      workingHours,
-      phone: phone || undefined,
-      email: email || undefined,
-      maxCapacity: maxCapacity ? parseInt(maxCapacity, 10) : undefined,
-      instructions: instructions || undefined,
+      workingHours: data.workingHours,
+      phone: data.phone || undefined,
+      email: data.email || undefined,
+      maxCapacity: data.maxCapacity ? parseInt(data.maxCapacity, 10) : undefined,
+      instructions: data.instructions || undefined,
     });
     setIsSaving(false);
 
@@ -107,28 +141,17 @@ export function ParkingInfoScreen() {
   };
 
   const handleToggleDay = (index: number) => {
-    if (!isEditing) return;
-    setWorkingHours((prev) =>
-      prev.map((wh, i) =>
-        i === index ? { ...wh, closed: !wh.closed } : wh,
-      ),
-    );
+    const current = watch(`workingHours.${index}.closed`) ?? false;
+    setValue(`workingHours.${index}.closed`, !current);
   };
 
-  const handleTimeChange = (
-    index: number,
-    field: 'open' | 'close',
-    value: string,
-  ) => {
-    setWorkingHours((prev) =>
-      prev.map((wh, i) => (i === index ? { ...wh, [field]: value } : wh)),
-    );
-  };
+  const cardClass =
+    'w-full rounded-2xl bg-background-secondary dark:bg-background-secondary-dark p-4 mb-3';
 
   return (
-    <View className="">
+    <KeyboardAvoidingView behavior="padding" keyboardVerticalOffset={100}>
       <Header title={t('parking-info.title')} />
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView className="container mt-2" showsVerticalScrollIndicator={false}>
         {parking.parking.imageUrl ? (
           <Image
             className="mb-3 h-40 w-full rounded-2xl"
@@ -136,7 +159,7 @@ export function ParkingInfoScreen() {
           />
         ) : null}
 
-        <View className="w-full rounded-2xl bg-background-secondary dark:bg-background-secondary-dark p-4 mb-3">
+        <View className={cardClass}>
           <View className="mb-2 flex-row items-center gap-2">
             <Image
               className="size-5"
@@ -165,167 +188,167 @@ export function ParkingInfoScreen() {
           ) : null}
         </View>
 
-        <View className='w-full rounded-2xl bg-background-secondary dark:bg-background-secondary-dark p-4 mb-3'>
+        <View className={cardClass}>
           <Text className="mb-3 text-base font-bold text-secondary dark:text-yellow-400">
             {t('parking-info.working-hours')}
           </Text>
-          {workingHours.map((wh, index) => (
-            <View
-              key={wh.day}
-              className="mb-2 flex-row items-center justify-between"
-            >
-              <TouchableOpacity
-                onPress={() => handleToggleDay(index)}
-                className="w-24"
-                disabled={!isEditing}
+          {fields.map((field, index) => {
+            const wh = watch(`workingHours.${index}`);
+            const isClosed = wh?.closed ?? false;
+            return (
+              <View
+                key={field.id}
+                className="mb-2 flex-row items-center justify-between"
               >
-                <Text
-                  className={`text-sm ${wh.closed ? 'text-gray-400 line-through dark:text-gray-600' : 'font-semibold text-text dark:text-white'}`}
+                <TouchableOpacity
+                  onPress={() => isEditing && handleToggleDay(index)}
+                  className="w-24"
                 >
-                  {wh.day}
-                </Text>
-              </TouchableOpacity>
-              {isEditing && !wh.closed ? (
-                <View className="flex-row items-center gap-2">
-                  <TextInput
-                    className="w-16 rounded-lg bg-white px-2 py-1 text-center text-xs dark:bg-gray-800 dark:text-white"
-                    value={String(wh.open ?? '')}
-                    onChangeText={(v) => handleTimeChange(index, 'open', v)}
-                    placeholder="08:00"
-                    keyboardType="number-pad"
-                  />
-                  <Text className="text-xs text-gray-400">-</Text>
-                  <TextInput
-                    className="w-16 rounded-lg bg-white px-2 py-1 text-center text-xs dark:bg-gray-800 dark:text-white"
-                    value={String(wh.close ?? '')}
-                    onChangeText={(v) => handleTimeChange(index, 'close', v)}
-                    placeholder="18:00"
-                    keyboardType="number-pad"
-                  />
-                </View>
-              ) : (
-                <Text
-                  className={`text-xs ${wh.closed ? 'text-gray-400 dark:text-gray-600' : 'text-text dark:text-gray-100'}`}
-                >
-                  {wh.closed
-                    ? t('parking-info.closed')
-                    : `${wh.open} - ${wh.close}`}
-                </Text>
-              )}
-            </View>
-          ))}
+                  <Text
+                    className={`text-sm ${isClosed ? 'text-gray-400 line-through dark:text-gray-600' : 'font-semibold text-text dark:text-white'}`}
+                  >
+                    {field.day}
+                  </Text>
+                </TouchableOpacity>
+                {isEditing && !isClosed ? (
+                  <View className="flex-row items-center gap-2">
+                    <ControlledInput
+                      control={control}
+                      name={`workingHours.${index}.open`}
+                      placeholder="08:00"
+                      keyboardType="number-pad"
+                      wrapperClassName="mb-0"
+                    />
+                    <Text className="text-xs text-gray-400">-</Text>
+                    <ControlledInput
+                      control={control}
+                      name={`workingHours.${index}.close`}
+                      placeholder="18:00"
+                      keyboardType="number-pad"
+                      wrapperClassName="mb-0"
+                    />
+                  </View>
+                ) : (
+                  <Text
+                    className={`text-xs ${isClosed ? 'text-gray-400 dark:text-gray-600' : 'text-text dark:text-gray-100'}`}
+                  >
+                    {isClosed
+                      ? t('parking-info.closed')
+                      : `${wh?.open ?? ''} - ${wh?.close ?? ''}`}
+                  </Text>
+                )}
+              </View>
+            );
+          })}
         </View>
 
-        <View className="w-full rounded-2xl bg-background-secondary dark:bg-background-secondary-dark p-4 mb-3">
-          <Text className="mb-3 text-base font-bold text-secondary dark:text-yellow-400">
-            {t('parking-info.general-info')}
-          </Text>
-
-          <View className="mb-2 flex-row items-center gap-2">
-            <Text className="w-24 text-xs font-semibold text-text dark:text-gray-300">
-              {t('forms.phone')}
+        {isEditing ? (
+          <View className={cardClass}>
+            <Text className="mb-3 text-base font-bold text-secondary dark:text-yellow-400">
+              {t('parking-info.general-info')}
             </Text>
-            {isEditing ? (
-              <TextInput
-                className=" rounded-lg bg-white px-2 py-1 text-xs dark:bg-gray-800 dark:text-white"
-                value={phone}
-                onChangeText={setPhone}
-                placeholder="+46 ..."
-                keyboardType="phone-pad"
-              />
-            ) : (
-              <Text className=" text-xs text-text dark:text-gray-100">
-                {phone || t('not-found')}
-              </Text>
-            )}
+
+            <ControlledInput
+              control={control}
+              name="phone"
+              label={t('forms.phone')}
+              placeholder="+46 ..."
+              keyboardType="phone-pad"
+            />
+
+            <ControlledInput
+              control={control}
+              name="email"
+              label={t('forms.email')}
+              placeholder="info@parking.se"
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+
+            <ControlledInput
+              control={control}
+              name="maxCapacity"
+              label={t('forms.capacity')}
+              placeholder="50"
+              keyboardType="number-pad"
+            />
+
+            <ControlledInput
+              control={control}
+              name="instructions"
+              label={t('parking-info.instructions')}
+              placeholder={t('parking-info.instructions-placeholder')}
+              multiline
+              numberOfLines={4}
+            />
           </View>
-
-          <View className="mb-2 flex-row items-center gap-2">
-            <Text className="w-24 text-xs font-semibold text-text dark:text-gray-300">
-              {t('forms.email')}
+        ) : (
+          <View className={cardClass}>
+            <Text className="mb-3 text-base font-bold text-secondary dark:text-yellow-400">
+              {t('parking-info.general-info')}
             </Text>
-            {isEditing ? (
-              <TextInput
-                className=" rounded-lg bg-white px-2 py-1 text-xs dark:bg-gray-800 dark:text-white"
-                value={email}
-                onChangeText={setEmail}
-                placeholder="info@parking.se"
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
-            ) : (
-              <Text className=" text-xs text-text dark:text-gray-100">
-                {email || t('not-found')}
+
+            <View className="mb-2 flex-row items-center gap-2">
+              <Text className="w-24 text-xs font-semibold text-text dark:text-gray-300">
+                {t('forms.phone')}
               </Text>
-            )}
-          </View>
-
-          <View className="mb-2 flex-row items-center gap-2">
-            <Text className="w-24 text-xs font-semibold text-text dark:text-gray-300">
-              {t('forms.capacity')}
-            </Text>
-            {isEditing ? (
-              <TextInput
-                className="w-16 rounded-lg bg-white px-2 py-1 text-xs dark:bg-gray-800 dark:text-white"
-                value={maxCapacity}
-                onChangeText={setMaxCapacity}
-                placeholder="50"
-                keyboardType="number-pad"
-              />
-            ) : (
               <Text className="text-xs text-text dark:text-gray-100">
-                {maxCapacity ? `${maxCapacity}` : t('not-found')}
+                {parking.parking.phone || t('not-found')}
               </Text>
-            )}
-          </View>
-        </View>
+            </View>
 
-        {parking.parking.instructions || isEditing ? (
-          <View className='w-full rounded-2xl bg-background-secondary dark:bg-background-secondary-dark p-4 mb-3'>
+            <View className="mb-2 flex-row items-center gap-2">
+              <Text className="w-24 text-xs font-semibold text-text dark:text-gray-300">
+                {t('forms.email')}
+              </Text>
+              <Text className="text-xs text-text dark:text-gray-100">
+                {parking.parking.email || t('not-found')}
+              </Text>
+            </View>
+
+            <View className="mb-2 flex-row items-center gap-2">
+              <Text className="w-24 text-xs font-semibold text-text dark:text-gray-300">
+                {t('forms.capacity')}
+              </Text>
+              <Text className="text-xs text-text dark:text-gray-100">
+                {parking.parking.maxCapacity
+                  ? `${parking.parking.maxCapacity}`
+                  : t('not-found')}
+              </Text>
+            </View>
+          </View>
+        )}
+
+        {parking.parking.instructions && !isEditing && (
+          <View className={cardClass}>
             <Text className="mb-2 text-base font-bold text-secondary dark:text-yellow-400">
               {t('parking-info.instructions')}
             </Text>
-            {isEditing ? (
-              <TextInput
-                className="w-full rounded-lg bg-white p-2 text-xs dark:bg-gray-800 dark:text-white"
-                value={instructions}
-                onChangeText={setInstructions}
-                placeholder={t('parking-info.instructions-placeholder')}
-                multiline
-                numberOfLines={4}
-                textAlignVertical="top"
-              />
-            ) : (
-              <Text className="text-xs text-text dark:text-gray-100">
-                {parking.parking.instructions || t('not-found')}
-              </Text>
-            )}
+            <Text className="text-xs text-text dark:text-gray-100">
+              {parking.parking.instructions}
+            </Text>
           </View>
-        ) : null}
+        )}
 
         {isAdmin && (
           <View className="mb-6 mt-2">
             {isEditing ? (
               <View className="flex-row gap-2">
-                <TouchableOpacity
-                  onPress={() => setIsEditing(false)}
-                  className=" items-center rounded-xl bg-gray-200 p-3 dark:bg-gray-700"
-                >
-                  <Text className="font-bold text-text dark:text-white">
-                    {t('cancel')}
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={handleSave}
+                <Button
+                  className="flex-1"
+                  onPress={() => {
+                    reset();
+                    setIsEditing(false);
+                  }}
+                  label={t('cancel')}
+                  variant="secondary"
+                />
+                <Button
+                  className="flex-1"
+                  onPress={handleSubmit(onSubmit)}
                   disabled={isSaving}
-                  className=" items-center rounded-xl bg-secondary p-3"
-                >
-                  <Text className="font-bold text-white">
-                    {isSaving
-                      ? t('forms.updating')
-                      : t('common.save')}
-                  </Text>
-                </TouchableOpacity>
+                  label={isSaving ? t('forms.updating') : t('common.save')}
+                />
               </View>
             ) : (
               <TouchableOpacity
@@ -342,6 +365,6 @@ export function ParkingInfoScreen() {
 
         <View className="h-10" />
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 }

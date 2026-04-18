@@ -65,23 +65,24 @@ export const create = mutation({
       createdAt: Date.now(),
     });
 
-    await ctx.runMutation(api.notifications.sendPushNotificationToManagers, {
-      title: 'Ny avbruten parkering',
-      body: `En parkering har blitt avbrutt for referanse ${args.reference}. parking: ${parking?.name || 'Ukjent'}`,
-    });
+    try {
+      await ctx.runMutation(api.notifications.sendPushNotificationToManagers, {
+        title: 'Ny avbruten parkering',
+        body: `En parkering har blitt avbrutt for referanse ${args.reference}. parking: ${parking?.name || 'Ukjent'}`,
+      });
+    } catch (error) {
+      console.error('Failed to send push notification:', error);
+    }
 
-    if (!args.resolved) {
-      const parking = await ctx.db.get(args.parkingId);
-      if (parking) {
-        if (args.cause === 'FELPARKERING') {
-          await ctx.db.patch(args.parkingId, {
-            unresolvedFelparkering: (parking.unresolvedFelparkering || 0) + 1,
-          });
-        } else if (args.cause === 'MAKULERA') {
-          await ctx.db.patch(args.parkingId, {
-            unresolvedMakuleras: (parking.unresolvedMakuleras || 0) + 1,
-          });
-        }
+    if (!args.resolved && parking) {
+      if (args.cause === 'FELPARKERING') {
+        await ctx.db.patch(args.parkingId, {
+          unresolvedFelparkering: (parking.unresolvedFelparkering || 0) + 1,
+        });
+      } else if (args.cause === 'MAKULERA') {
+        await ctx.db.patch(args.parkingId, {
+          unresolvedMakuleras: (parking.unresolvedMakuleras || 0) + 1,
+        });
       }
     }
 
@@ -132,6 +133,7 @@ export const remove = mutation({
 export const deleteOrphanedCanceledViolations = mutation({
   args: {},
   handler: async (ctx) => {
+    await requireAdmin(ctx);
     // Get all canceled violations
     const allViolations = await ctx.db.query('canceledViolations').collect();
 

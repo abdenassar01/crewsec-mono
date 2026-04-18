@@ -168,6 +168,9 @@
     "images-checked": "Bilder kontrollerade"
   },
   "not-found": "Ej tillhandahållet ännu",
+  "noResults": "Inga resultat hittades",
+  "parking": "Parkering",
+  "parkings": "Parkeringar",
   "onboarding": {
     "get-started": "Kom igång",
     "language": "Språk",
@@ -211,7 +214,8 @@
   "report-status": {
     "awaiting": "Väntar",
     "refused": "Avvisad",
-    "resolved": "Löst"
+    "resolved": "Löst",
+    "conflict": "Konflikt"
   },
   "resolve": "Är du säker på att du vill lösa detta objekt?",
   "role": {

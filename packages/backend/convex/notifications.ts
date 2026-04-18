@@ -131,7 +131,7 @@ export const sendPushNotificationToAdmins = mutation({
       .withIndex('by_role', (q) => q.eq('role', 'ADMIN'))
       .collect();
 
-    Promise.all(
+    await Promise.all(
       admins.map((admin) =>
         pushNotifications.sendPushNotification(ctx, {
           userId: admin._id,

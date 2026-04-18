@@ -136,22 +136,21 @@ export const listTowns = query({
       return failure('Not authenticated', ErrorCodes.UNAUTHORIZED);
     }
 
-    const query = ctx.db.query('towns');
-
-    if (args.locationId) {
-      query
-        .withIndex('by_locationId', (q) => q.eq('locationId', args.locationId!))
-        .collect();
-    }
-
     let results;
     if (args.search) {
       results = await ctx.db
         .query('towns')
         .withSearchIndex('by_label', (q) => q.search('label', args.search!))
         .collect();
+    } else if (args.locationId) {
+      results = await ctx.db
+        .query('towns')
+        .withIndex('by_locationId', (q) =>
+          q.eq('locationId', args.locationId!),
+        )
+        .collect();
     } else {
-      results = await query.collect();
+      results = await ctx.db.query('towns').collect();
     }
     return success(results);
   },

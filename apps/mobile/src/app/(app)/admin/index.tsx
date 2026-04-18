@@ -98,7 +98,7 @@ export default function AdminDashboard() {
       <ManagerTopWidget />
       <ScrollView showsVerticalScrollIndicator={false} className="mt-3" contentContainerClassName=''>
         <ConfigurationPanel />
-        <View className="flex-row flex-wrap justify-between gap-y-2 mb-t">
+        <View className="flex-row flex-wrap justify-between gap-y-2 mt-2">
           {tabs.map((tab) => (
             <TouchableOpacity
               key={`dashboard-item-${tab.title}`}

@@ -83,7 +83,7 @@ export const getMyParking = query({
       try {
         imageUrl = (await ctx.storage.getUrl(parking.imageStorageId)) || '';
       } catch (error) {
-        console.error('Failed to get avatar URL:', error);
+        console.error('Failed to get parking image URL:', error);
         imageUrl = '';
       }
     }
@@ -571,15 +571,16 @@ export const deleteAvailability = mutation({
 export const getParkingInfo = query({
   args: { parkingId: v.optional(v.id('parkings')) },
   handler: async (ctx, args): Promise<CustomResponse<any>> => {
+    const user = await getAuthenticatedUser(ctx);
+    if (!user) {
+      return failure('Unauthenticated', ErrorCodes.UNAUTHORIZED);
+    }
+
     let parking;
 
     if (args.parkingId) {
       parking = await ctx.db.get(args.parkingId);
     } else {
-      const user = await getAuthenticatedUser(ctx);
-      if (!user) {
-        return failure('Unauthenticated', ErrorCodes.UNAUTHORIZED);
-      }
       parking = await ctx.db
         .query('parkings')
         .withIndex('by_userId', (q) => q.eq('userId', user._id))
@@ -655,8 +656,8 @@ export const deleteParking = mutation({
 export const deleteOrphanedParkings = mutation({
   args: {},
   handler: async (ctx) => {
+    await requireAdmin(ctx);
 
-    // Get all parkings
     const allParkings = await ctx.db.query('parkings').collect();
 
     // Get all user IDs

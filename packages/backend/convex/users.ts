@@ -167,7 +167,6 @@ export const getByAuthUserId = query({
     }
     const user = await ctx.db
       .query('users')
-      .filter((q) => q.eq('enabled', 'true'))
       .withIndex('by_userId', (q) => q.eq('userId', args.authUserId))
       .unique();
 

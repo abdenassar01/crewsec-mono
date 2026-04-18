@@ -1,5 +1,6 @@
 import { v } from 'convex/values';
 import { query } from './_generated/server';
+import { requireAdmin, getAuthenticatedUser } from './auth/helpers';
 import { CustomResponse, failure, success, ErrorCodes } from './util';
 
 /**
@@ -23,8 +24,9 @@ export const getControlFeeStats = query({
     groupBy: v.optional(v.union(v.literal('day'), v.literal('week'), v.literal('month'))),
   },
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     const now = Date.now();
-    const startDate = args.startDate ?? now - 30 * 24 * 60 * 60 * 1000; // Default: 30 days ago
+    const startDate = args.startDate ?? now - 30 * 24 * 60 * 60 * 1000;
     const endDate = args.endDate ?? now;
     const groupBy = args.groupBy ?? 'day';
 
@@ -76,6 +78,7 @@ export const getControlFeeByStatus = query({
     endDate: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     const now = Date.now();
     const startDate = args.startDate ?? now - 30 * 24 * 60 * 60 * 1000;
     const endDate = args.endDate ?? now;
@@ -107,6 +110,7 @@ export const getControlFeeStatsByStatus = query({
     status: v.optional(v.union(v.literal('AWAITING'), v.literal('PAID'), v.literal('CANCELED'), v.literal('CONFLICT'))),
   },
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     const now = Date.now();
     const startDate = args.startDate ?? now - 30 * 24 * 60 * 60 * 1000;
     const endDate = args.endDate ?? now;
@@ -118,7 +122,6 @@ export const getControlFeeStatsByStatus = query({
       (fee) => fee.startDate >= startDate && fee.startDate <= endDate,
     );
 
-    // Filter by status if specified
     const statusFilteredFees = args.status
       ? filteredFees.filter((f) => f.status === args.status)
       : filteredFees;
@@ -132,9 +135,7 @@ export const getControlFeeStatsByStatus = query({
       if (groupBy === 'day') {
         key = date.toISOString().split('T')[0];
       } else if (groupBy === 'week') {
-        const weekStart = new Date(date);
-        weekStart.setDate(date.getDate() - date.getDay());
-        key = `W${Math.ceil((date.getDate() + date.getDay()) / 7)}`;
+        key = `${date.getFullYear()}-W${String(getISOWeek(date)).padStart(2, '0')}`;
       } else {
         key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
       }
@@ -158,7 +159,7 @@ export const getParkingStats = query({
     parkingId: v.id('parkings'),
   },
   handler: async (ctx, args): Promise<CustomResponse<any>> => {
-    // Get parking details
+    await requireAdmin(ctx);
     const parking = await ctx.db.get(args.parkingId);
     if (!parking) {
       return failure('Parking not found', ErrorCodes.NOT_FOUND);
@@ -212,7 +213,7 @@ export const getParkingStats = query({
  */
 export const getGlobalStats = query({
   handler: async (ctx) => {
-    // Get all parkings
+    await requireAdmin(ctx);
     const allParkings = await ctx.db.query('parkings').collect();
 
     // Get all vehicles
@@ -259,6 +260,7 @@ export const getControlFeesByAgent = query({
     endDate: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     const now = Date.now();
     const startDate = args.startDate ?? now - 30 * 24 * 60 * 60 * 1000;
     const endDate = args.endDate ?? now;

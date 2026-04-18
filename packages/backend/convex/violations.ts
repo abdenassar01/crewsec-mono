@@ -17,10 +17,6 @@ export const getViolationById = query({
   },
   handler: async (ctx, args) => {
     await requireAdmin(ctx);
-    return await ctx.db
-      .query('violations')
-      .withIndex('by_id')
-      .filter((q) => q.eq(q.field('_id'), args.id))
-      .unique();
+    return await ctx.db.get(args.id);
   },
 });

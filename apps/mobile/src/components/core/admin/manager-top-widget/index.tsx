@@ -19,7 +19,7 @@ export function ManagerTopWidget() {
         <View className="flex-row gap-3">
           <Image
             source={{ uri: user?.avatarUrl || undefined }}
-            className="!h-32 !w-32 rounded-xl "
+            className="!h-32 !w-32 rounded-xl bg-white"
           />
           <View className="border-l border-secondary/10 pl-3">
             <Text className="w-full whitespace-nowrap text-xl font-bold uppercase text-secondary">

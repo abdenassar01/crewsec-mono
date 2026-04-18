@@ -17,6 +17,7 @@ export const insertBatch = mutation({
     ),
   },
   handler: async (ctx, args) => {
+    await requireAdmin(ctx);
     const results = [];
     for (const vehicle of args.vehicles) {
       try {
@@ -71,7 +72,10 @@ export const search = query({
   },
   handler: async (ctx, args) => {
     const now = Date.now();
-    await getAuthenticatedUser(ctx);
+    const user = await getAuthenticatedUser(ctx);
+    if (!user) {
+      return [];
+    }
 
     if (args.query === '') {
       if (args.parkingId) {
@@ -84,10 +88,18 @@ export const search = query({
       return ctx.db.query('vehicles').collect();
     }
 
+    if (args.parkingId) {
+      return await ctx.db
+        .query('vehicles')
+        .withSearchIndex('by_reference_search', (q) =>
+          q.search('reference', args.query).eq('parkingId', args.parkingId!),
+        )
+        .collect();
+    }
     return await ctx.db
       .query('vehicles')
       .withSearchIndex('by_reference_search', (q) =>
-        q.search('reference', args.query).eq('parkingId', args.parkingId!),
+        q.search('reference', args.query),
       )
       .collect();
   },
@@ -98,17 +110,21 @@ export const searchWithDetails = query({
     query: v.string(),
   },
   handler: async (ctx, args) => {
-    await getAuthenticatedUser(ctx);
-    let vehicles: any[] = [];
+    const user = await getAuthenticatedUser(ctx);
+    if (!user) {
+      return { page: [], continueCursor: null, isDone: true };
+    }
 
+    let vehicles;
     if (args.query === '') {
-      vehicles = await ctx.db.query('vehicles').take(20);
+      vehicles = await ctx.db.query('vehicles').order('desc').take(20);
     } else {
-      vehicles = await ctx.db.query('vehicles').take(100);
-      const queryLower = args.query.toLowerCase();
-      vehicles = vehicles.filter((v) =>
-        v.reference.toLowerCase().includes(queryLower),
-      );
+      vehicles = await ctx.db
+        .query('vehicles')
+        .withSearchIndex('by_reference_search', (q) =>
+          q.search('reference', args.query),
+        )
+        .collect();
     }
 
     const pageWithParking = await Promise.all(
@@ -184,6 +200,7 @@ export const deleteVehicle = mutation({
 export const deleteOrphanedVehicles = mutation({
   args: {},
   handler: async (ctx) => {
+    await requireAdmin(ctx);
     // Get all vehicles
     const allVehicles = await ctx.db.query('vehicles').collect();
 

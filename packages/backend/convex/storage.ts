@@ -1,5 +1,5 @@
 import { v } from 'convex/values';
-import { mutation } from './_generated/server';
+import { mutation, query } from './_generated/server';
 import { getAuthenticatedUser } from './auth/helpers';
 
 export const generateUploadUrl = mutation({
@@ -8,7 +8,8 @@ export const generateUploadUrl = mutation({
     return await ctx.storage.generateUploadUrl();
   },
 });
-export const getUrl = mutation({
+
+export const getUrl = query({
   args: { storageId: v.id('_storage') },
   handler: async (ctx, args) => {
     await getAuthenticatedUser(ctx);
