@@ -232,7 +232,7 @@ export const SwitchIcon = ({ checked = false }: IconProps) => {
       <MotiView
         style={styles.switchThumb}
         animate={{
-          translateX: I18nManager.isRTL ? translateX : -translateX,
+          translateX: I18nManager.isRTL ? -translateX : translateX,
         }}
         transition={{
           translateX: { overshootClamping: true, damping: 15, stiffness: 200 },

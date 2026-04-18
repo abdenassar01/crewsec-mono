@@ -277,7 +277,16 @@
     "closed": "Closed",
     "edit": "Edit Info",
     "save-success": "Parking info updated successfully",
-    "not-found": "No parking information available"
+    "not-found": "No parking information available",
+    "days": {
+      "Monday": "Monday",
+      "Tuesday": "Tuesday",
+      "Wednesday": "Wednesday",
+      "Thursday": "Thursday",
+      "Friday": "Friday",
+      "Saturday": "Saturday",
+      "Sunday": "Sunday"
+    }
   },
   "statistics": {
     "title": "Statistics",

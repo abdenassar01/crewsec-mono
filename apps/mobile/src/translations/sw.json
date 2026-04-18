@@ -283,7 +283,16 @@
     "closed": "Stängt",
     "edit": "Redigera info",
     "save-success": "Parkeringsinformation uppdaterad",
-    "not-found": "Ingen parkeringsinformation tillgänglig"
+    "not-found": "Ingen parkeringsinformation tillgänglig",
+    "days": {
+      "Monday": "Måndag",
+      "Tuesday": "Tisdag",
+      "Wednesday": "Onsdag",
+      "Thursday": "Torsdag",
+      "Friday": "Fredag",
+      "Saturday": "Lördag",
+      "Sunday": "Söndag"
+    }
   },
   "statistics": {
     "title": "Statistik",

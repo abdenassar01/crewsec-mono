@@ -1,9 +1,9 @@
 import { type Control, type UseFormSetValue, type UseFormWatch } from 'react-hook-form';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { TouchableOpacity, View } from 'react-native';
+import { View } from 'react-native';
 
-import { ControlledInput, Text } from '@/components/ui';
+import { ControlledInput, Switch, Text } from '@/components/ui';
 import { CARD_CLASS, type ParkingInfoFormValues } from './shared';
 
 interface ParkingWorkingHoursProps {
@@ -38,16 +38,25 @@ function WorkingHourRow({
   };
 
   return (
-    <View className="mb-2 flex-row items-center justify-between">
-      <TouchableOpacity onPress={() => isEditing && handleToggle()} className="w-24">
+    <View className="mb-2">
+      <View className="flex-row items-center justify-between">
         <Text
           className={`text-sm ${isClosed ? 'text-gray-400 line-through dark:text-gray-600' : 'font-semibold text-text dark:text-white'}`}
         >
-          {day}
+          {t(`parking-info.days.${day}`)}
         </Text>
-      </TouchableOpacity>
-      {isEditing ? (
-        <View className="flex-row items-center gap-2">
+        {isEditing ? (
+          <Switch checked={!isClosed} onChange={handleToggle} accessibilityLabel={day} />
+        ) : (
+          <Text
+            className={`text-xs ${isClosed ? 'text-gray-400 dark:text-gray-600' : 'text-text dark:text-gray-100'}`}
+          >
+            {isClosed ? t('parking-info.closed') : `${wh?.open ?? ''} - ${wh?.close ?? ''}`}
+          </Text>
+        )}
+      </View>
+      {isEditing && !isClosed && (
+        <View className="mt-1.5 flex-row items-center gap-2">
           <ControlledInput
             control={control as any}
             name={`workingHours.${index}.open`}
@@ -64,12 +73,6 @@ function WorkingHourRow({
             wrapperClassName="mb-0"
           />
         </View>
-      ) : (
-        <Text
-          className={`text-xs ${isClosed ? 'text-gray-400 dark:text-gray-600' : 'text-text dark:text-gray-100'}`}
-        >
-          {isClosed ? t('parking-info.closed') : `${wh?.open ?? ''} - ${wh?.close ?? ''}`}
-        </Text>
       )}
     </View>
   );
