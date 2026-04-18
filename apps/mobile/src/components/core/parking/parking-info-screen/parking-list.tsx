@@ -2,7 +2,7 @@ import { api } from 'convex/_generated/api';
 import { type Id } from 'convex/_generated/dataModel';
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useWindowDimensions, View } from 'react-native';
+import { ScrollView, useWindowDimensions, View } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 
 import { ActivityIndicator, Image, Input, Text, TouchableOpacity } from '@/components/ui';
@@ -39,7 +39,7 @@ export function ParkingList({ onSelect }: ParkingListProps) {
   }
 
   return (
-    <View showsVerticalScrollIndicator={false} style={{ height: height - 140 }}>
+    <ScrollView showsVerticalScrollIndicator={false} style={{ height: height - 140 }}>
       <Input
         value={searchText}
         placeholder={`${t('forms.query')}...`}
@@ -48,6 +48,7 @@ export function ParkingList({ onSelect }: ParkingListProps) {
       <FlashList
         data={data}
         numColumns={2}
+        ItemSeparatorComponent={() => <View className='w-1 h-full' />}
         contentContainerClassName="gap-2 pb-20"
         keyExtractor={(item) => item._id}
         renderItem={(item) => (
@@ -70,6 +71,6 @@ export function ParkingList({ onSelect }: ParkingListProps) {
           </TouchableOpacity>
         )}
       />
-    </View>
+    </ScrollView>
   );
 }
