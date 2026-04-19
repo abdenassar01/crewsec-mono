@@ -39,7 +39,6 @@ export function CurrentLocationSection() {
         ) : (
           <LocationMapView coordinates={coordinates} title="Your Location" />
         )}
-        <View className="h-24" />
       </View>
     </>
   );
