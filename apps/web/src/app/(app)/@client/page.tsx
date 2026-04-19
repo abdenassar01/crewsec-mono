@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useQuery } from 'convex/react';
 import { api } from '@convex/_generated/api';
 import { Button } from '@/components/ui/button';
-import { useSafeQuery, useSafeMutation } from '@/lib/hooks';
+import { useSafeAction, useSafeQuery } from '@/lib/hooks';
 import {
   CarParking01FreeIcons,
   Alert01FreeIcons,
@@ -32,7 +32,7 @@ export default function ClientDashboardPage() {
   const [isSendingAlarm, setIsSendingAlarm] = useState(false);
   const user = useSafeQuery(api.users.getCurrentUserProfile);
   const myParking = useSafeQuery(api.parkings.getMyParking);
-  const sendNotification = useSafeMutation(api.notifications.sendPushNotificationToManagers);
+  const sendNotification = useSafeAction(api.notifications.sendPushNotificationToManagers);
 
   const parking = myParking?.parking;
 

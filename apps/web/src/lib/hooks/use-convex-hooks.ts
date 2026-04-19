@@ -1,6 +1,7 @@
 'use client'
 
 import {
+  useAction as useConvexAction,
   useMutation as useConvexMutation,
   usePaginatedQuery as useConvexPaginatedQuery,
   useQuery as useConvexQuery,
@@ -45,6 +46,33 @@ function isErrorResponse(result: unknown): result is ErrorResponse {
  *
  * @returns A function that returns the data on success, or null on failure.
  */
+export function useSafeAction<T extends FunctionReference<'action'>>(
+  actionReference: T,
+) {
+  const action = useConvexAction(actionReference);
+
+  return useCallback(
+    async (...args: OptionalRestArgs<T>): Promise<any> => {
+      try {
+        const result = await action(...args);
+
+        if (isErrorResponse(result)) {
+          showErrorMessage(`${result.error.code}: ${result.error.message}`);
+          return null;
+        }
+
+        return result?.data ?? result;
+      } catch (err: unknown) {
+        const message =
+          err instanceof Error ? err.message : 'Network error occurred';
+        showErrorMessage(message);
+        return null;
+      }
+    },
+    [action],
+  );
+}
+
 export function useSafeMutation<T extends FunctionReference<'mutation'>>(
   mutationReference: T,
 ) {

@@ -66,7 +66,7 @@ export const create = mutation({
     });
 
     try {
-      await ctx.runAction(api.notifications.sendPushNotificationToManagers, {
+      ctx.scheduler.runAfter(0, api.notifications.sendPushNotificationToManagers, {
         title: 'Ny avbruten parkering',
         body: `En parkering har blitt avbrutt for referanse ${args.reference}. parking: ${parking?.name || 'Ukjent'}`,
       });

@@ -549,6 +549,9 @@ importers:
       '@tanstack/react-query-devtools':
         specifier: ^5.85.5
         version: 5.99.0(@tanstack/react-query@5.99.0(react@19.1.0))(react@19.1.0)
+      '@types/minimatch':
+        specifier: ^6.0.0
+        version: 6.0.0
       '@types/node':
         specifier: ^20
         version: 20.19.39
