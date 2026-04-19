@@ -68,11 +68,7 @@ export const getColumns = (
             <DropdownMenuSeparator />
             <DropdownMenuItem
               className="text-destructive focus:bg-destructive/10 focus:text-destructive"
-              onClick={() => {
-                if (window.confirm("Are you sure you want to delete this user?")) {
-                  onDelete(user._id);
-                }
-              }}
+              onClick={() => onDelete(user._id)}
             >
               Delete User
             </DropdownMenuItem>

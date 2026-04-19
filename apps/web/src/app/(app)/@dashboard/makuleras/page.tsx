@@ -12,6 +12,7 @@ import { getColumns } from "./columns";
 import { api } from "@convex/_generated/api";
 import type { Doc } from "@convex/_generated/dataModel";
 import { useSafeMutation, useSafeQuery } from "@/lib/hooks";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 type Makuleras = Doc<"canceledViolations">;
 
@@ -19,6 +20,7 @@ export default function MakulerasList() {
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [editingMakuleras, setEditingMakuleras] = React.useState<Makuleras | null>(null);
   const [isPending, setIsPending] = React.useState(false);
+  const [deleteTarget, setDeleteTarget] = React.useState<Makuleras | null>(null);
 
   const makulerasList = useSafeQuery(api.canceledViolations.listForCause, { cause: "MAKULERA" });
   const createMakuleras = useSafeMutation(api.canceledViolations.create);
@@ -46,13 +48,18 @@ export default function MakulerasList() {
     setIsPending(false);
   };
 
-  const handleDelete = async (id: Doc<"canceledViolations">["_id"]) => {
-    if (confirm("Are you sure you want to delete this makuleras?")) {
-      const result = await deleteMakuleras({ id });
-      if (result !== null) {
-        toast.success("Makuleras deleted successfully!");
-      }
+  const handleDelete = (id: Doc<"canceledViolations">["_id"]) => {
+    const item = makulerasList?.find((m: any) => m._id === id);
+    setDeleteTarget(item ?? null);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    const result = await deleteMakuleras({ id: deleteTarget._id });
+    if (result !== null) {
+      toast.success("Makuleras deleted successfully!");
     }
+    setDeleteTarget(null);
   };
 
   const columns = React.useMemo(
@@ -120,6 +127,15 @@ export default function MakulerasList() {
         pageSize={100}
         setPagination={() => {}} // Not needed with loadMore
         isLoading={makulerasList === undefined}
+      />
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        title="Delete Makuleras"
+        description="Are you sure you want to delete this makuleras? This action cannot be undone."
+        confirmLabel="Delete"
+        onConfirm={confirmDelete}
       />
     </div>
   );

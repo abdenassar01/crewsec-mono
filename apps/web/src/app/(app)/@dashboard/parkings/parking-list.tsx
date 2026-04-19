@@ -13,6 +13,7 @@ import { ParkingFilters, type ParkingFilters as ParkingFiltersType } from "./par
 import type { Doc } from "@convex/_generated/dataModel";
 import { api } from "@convex/_generated/api";
 import { useMutation } from "convex/react";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 interface ParkingListProps {
   results: ParkingWithUser[];
@@ -35,6 +36,7 @@ export function ParkingList({
 }: ParkingListProps) {
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [editingParking, setEditingParking] = React.useState<ParkingWithUser | null>(null);
+  const [anonymizeTarget, setAnonymizeTarget] = React.useState<ParkingWithUser | null>(null);
   const [filters, setFilters] = React.useState<ParkingFiltersType>({
     searchTerm: "",
     location: "",
@@ -189,11 +191,19 @@ export function ParkingList({
   };
 
   const handleAnonymize = (parkingId: Doc<"parkings">["_id"]) => {
-    if (window.confirm("Are you sure you want to anonymize and close this parking? This cannot be undone.")) {
-      anonymizeParking({ id: parkingId })
-        .then(() => toast.success("Parking anonymized."))
-        .catch((err) => toast.error(err.message));
+    const parking = results?.find((p: any) => p._id === parkingId);
+    setAnonymizeTarget(parking ?? null);
+  };
+
+  const confirmAnonymize = async () => {
+    if (!anonymizeTarget) return;
+    try {
+      await anonymizeParking({ id: anonymizeTarget._id });
+      toast.success("Parking anonymized.");
+    } catch (err: any) {
+      toast.error(err.message);
     }
+    setAnonymizeTarget(null);
   };
 
   const columns = React.useMemo(
@@ -256,6 +266,15 @@ export function ParkingList({
           filters={filtersComponent}
         />
       )}
+
+      <ConfirmDialog
+        open={!!anonymizeTarget}
+        onOpenChange={(open) => !open && setAnonymizeTarget(null)}
+        title="Anonymize & Close Parking"
+        description={`Are you sure you want to anonymize and close "${anonymizeTarget?.name ?? "this parking"}"? This action cannot be undone.`}
+        confirmLabel="Anonymize"
+        onConfirm={confirmAnonymize}
+      />
     </div>
   );
 }

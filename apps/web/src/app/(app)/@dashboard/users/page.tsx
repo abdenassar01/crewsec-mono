@@ -15,11 +15,13 @@ import type { Doc } from "@convex/_generated/dataModel";
 import { useSafeMutation, useSafePaginatedQuery } from "@/lib/hooks";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 export default function UserListClient() {
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [editingUser, setEditingUser] = React.useState<Doc<"users"> | null>(null);
   const [resetPasswordUser, setResetPasswordUser] = React.useState<Doc<"users"> | null>(null);
+  const [deleteTarget, setDeleteTarget] = React.useState<Doc<"users"> | null>(null);
   const [newPassword, setNewPassword] = React.useState("");
   const [filters, setFilters] = React.useState<UserFiltersType>({
     searchTerm: "",
@@ -38,13 +40,18 @@ export default function UserListClient() {
   const deleteUser = useSafeMutation(api.users.deleteUser);
   const resetUserPassword = useSafeMutation(api.users.resetUserPassword);
 
-  const handleDelete = async (userId: Doc<"users">["_id"]) => {
-    if (window.confirm("Are you sure you want to delete this user?")) {
-      const result = await deleteUser({ userId });
-      if (result !== null) {
-        toast.success("User deleted.");
-      }
+  const handleDelete = (userId: Doc<"users">["_id"]) => {
+    const user = results.find((u: any) => u._id === userId);
+    setDeleteTarget(user ?? null);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    const result = await deleteUser({ userId: deleteTarget._id });
+    if (result !== null) {
+      toast.success("User deleted.");
     }
+    setDeleteTarget(null);
   };
 
   const handleResetPassword = async () => {
@@ -238,6 +245,15 @@ export default function UserListClient() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        title="Delete User"
+        description={`Are you sure you want to delete ${deleteTarget?.name ?? "this user"}? This action cannot be undone.`}
+        confirmLabel="Delete"
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }

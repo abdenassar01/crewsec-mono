@@ -15,6 +15,7 @@ import { getColumns, type ParkingWithUser } from "./columns";
 import { api } from "@convex/_generated/api";
 import { Id } from "@convex/_generated/dataModel";
 import { useSafeMutation, useSafeQuery } from "@/lib/hooks";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 export default function ParkingList() {
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
@@ -22,6 +23,7 @@ export default function ParkingList() {
   const [resetPasswordParking, setResetPasswordParking] = React.useState<ParkingWithUser | null>(null);
   const [newPassword, setNewPassword] = React.useState("");
   const [isPending, setIsPending] = React.useState(false);
+  const [anonymizeTarget, setAnonymizeTarget] = React.useState<ParkingWithUser | null>(null);
   const [filters, setFilters] = React.useState<ParkingFiltersType>({
     searchTerm: "",
     location: "",
@@ -159,12 +161,8 @@ export default function ParkingList() {
           setIsDialogOpen(true);
         },
         async (parkingId) => {
-          if (window.confirm("Are you sure you want to anonymize and close this parking? This cannot be undone.")) {
-            const result = await anonymizeParking({ id: parkingId });
-            if (result !== null) {
-              toast.success("Parking anonymized.");
-            }
-          }
+          const parking = filteredResults.find((p) => p._id === parkingId);
+          setAnonymizeTarget(parking ?? null);
         },
         (parking) => {
           setResetPasswordParking(parking);
@@ -174,6 +172,15 @@ export default function ParkingList() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     []
   );
+
+  const confirmAnonymize = async () => {
+    if (!anonymizeTarget) return;
+    const result = await anonymizeParking({ id: anonymizeTarget._id });
+    if (result !== null) {
+      toast.success("Parking anonymized.");
+    }
+    setAnonymizeTarget(null);
+  };
 
   const handleFormSubmit = async (data: any, isEdit: boolean) => {
     setIsPending(true);
@@ -326,6 +333,15 @@ export default function ParkingList() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={!!anonymizeTarget}
+        onOpenChange={(open) => !open && setAnonymizeTarget(null)}
+        title="Anonymize & Close Parking"
+        description={`Are you sure you want to anonymize and close "${anonymizeTarget?.name ?? "this parking"}"? This action cannot be undone.`}
+        confirmLabel="Anonymize"
+        onConfirm={confirmAnonymize}
+      />
     </div>
   );
 }

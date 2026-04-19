@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from "@/components/ui/button";
 import type { Doc } from "@convex/_generated/dataModel";
 import { useSafeMutation, useSafeQuery } from "@/lib/hooks";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 type Makuleras = Doc<"canceledViolations">;
 
@@ -21,6 +22,7 @@ export function MakulerasListClient() {
   const [editingMakuleras, setEditingMakuleras] = useState<Makuleras | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isPending, setIsPending] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Makuleras | null>(null);
 
   const handleCreate = async (data: any) => {
     setIsPending(true);
@@ -49,14 +51,19 @@ export function MakulerasListClient() {
     }
   };
 
-  const handleDelete = async (id: any) => {
-    if (confirm("Are you sure you want to delete this makuleras?")) {
-      try {
-        await deleteMakuleras({ id });
-      } catch (error) {
-        console.error("Error deleting makuleras:", error);
-      }
+  const handleDelete = (id: any) => {
+    const item = makulerasList?.find((m: any) => m._id === id);
+    setDeleteTarget(item ?? null);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    try {
+      await deleteMakuleras({ id: deleteTarget._id });
+    } catch (error) {
+      console.error("Error deleting makuleras:", error);
     }
+    setDeleteTarget(null);
   };
 
   const handleEdit = (makuleras: Makuleras) => {
@@ -90,6 +97,15 @@ export function MakulerasListClient() {
       <DataTable
         columns={getColumns(handleEdit, handleDelete)}
         data={makulerasList || []}
+      />
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        title="Delete Makuleras"
+        description="Are you sure you want to delete this makuleras? This action cannot be undone."
+        confirmLabel="Delete"
+        onConfirm={confirmDelete}
       />
     </div>
   );

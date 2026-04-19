@@ -12,6 +12,7 @@ import { getColumns } from "./columns";
 import { api } from "@convex/_generated/api";
 import type { Doc } from "@convex/_generated/dataModel";
 import { useSafeMutation, useSafeQuery } from "@/lib/hooks";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 type Felparkering = Doc<"canceledViolations">;
 
@@ -19,6 +20,7 @@ export default function FelparkeringList() {
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [editingFelparkering, setEditingFelparkering] = React.useState<Felparkering | null>(null);
   const [isPending, setIsPending] = React.useState(false);
+  const [deleteTarget, setDeleteTarget] = React.useState<Felparkering | null>(null);
 
   const felparkeringar = useSafeQuery(api.canceledViolations.listForCause, { cause: "FELPARKERING" });
   const createFelparkering = useSafeMutation(api.canceledViolations.create);
@@ -46,13 +48,18 @@ export default function FelparkeringList() {
     setIsPending(false);
   };
 
-  const handleDelete = async (id: Doc<"canceledViolations">["_id"]) => {
-    if (confirm("Are you sure you want to delete this felparkering?")) {
-      const result = await deleteFelparkering({ id });
-      if (result !== null) {
-        toast.success("Felparkering deleted successfully!");
-      }
+  const handleDelete = (id: Doc<"canceledViolations">["_id"]) => {
+    const item = felparkeringar?.find((f: any) => f._id === id);
+    setDeleteTarget(item ?? null);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+    const result = await deleteFelparkering({ id: deleteTarget._id });
+    if (result !== null) {
+      toast.success("Felparkering deleted successfully!");
     }
+    setDeleteTarget(null);
   };
 
   const columns = React.useMemo(
@@ -120,6 +127,15 @@ export default function FelparkeringList() {
         pageSize={100}
         setPagination={() => {}} // Not needed with loadMore
         isLoading={felparkeringar === undefined}
+      />
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        title="Delete Felparkering"
+        description="Are you sure you want to delete this felparkering? This action cannot be undone."
+        confirmLabel="Delete"
+        onConfirm={confirmDelete}
       />
     </div>
   );
