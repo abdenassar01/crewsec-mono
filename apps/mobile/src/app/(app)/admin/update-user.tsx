@@ -7,7 +7,7 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Header, ProgressBar, RootWrapper } from '@/components/common';
-import { UpdateUserForm } from '@/components/core';
+import { UpdateClientParkingForm } from '@/components/core';
 import { ActivityIndicator, Text, View } from '@/components/ui';
 
 export default function UpdateParking() {
@@ -56,7 +56,7 @@ export default function UpdateParking() {
             <Text className="text-center">Parking not found</Text>
           </View>
         ) : (
-          <UpdateUserForm
+          <UpdateClientParkingForm
             parking={data}
             setCurrentStep={setCurrentStep}
             pending={false}

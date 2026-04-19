@@ -154,9 +154,9 @@ export function ReferenceDetailScreen({
 
       <Modal ref={ref} snapPoints={['20%', '35%']}>
         <View className="p-4">
-          <Text className="mb-3 text-center text-lg">Title</Text>
+          <Text className="mb-3 text-center text-lg">{t('reference-detail.confirm-title')}</Text>
           <Text className="text-muted-foreground dark:text-muted-foreground-dark mb-6 text-center">
-            Helo world
+            {t('reference-detail.confirm-message')}
           </Text>
           <Button
             className="h-14 w-full bg-secondary/10 dark:bg-primary/10"

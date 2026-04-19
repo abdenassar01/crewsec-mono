@@ -1,6 +1,6 @@
 /* eslint-disable max-lines-per-function */
 import React from 'react';
-import { type Control, useController } from 'react-hook-form';
+import { type Control, type Path, useController } from 'react-hook-form';
 import { ScrollView } from 'react-native-gesture-handler';
 
 import {
@@ -14,10 +14,10 @@ import {
 } from '@/components/ui';
 import { cn } from '@/lib';
 
-interface Props<T> {
+interface Props<T, TControl extends Record<string, any>> {
   label: string;
   name: string;
-  control: Control<any>;
+  control: Control<TControl>;
   items: T[];
   extractValue: (item: T) => any;
   extractDisplayMember: (item: T) => string;
@@ -27,7 +27,7 @@ interface Props<T> {
   onTextChange?: (value: string) => void;
 }
 
-export function StaticDataSelector<T>({
+export function StaticDataSelector<T, TControl extends Record<string, any>>({
   extractDisplayMember,
   extractValue,
   items,
@@ -38,13 +38,13 @@ export function StaticDataSelector<T>({
   loading,
   name,
   onTextChange,
-}: Props<T>) {
+}: Props<T, TControl>) {
   const [query, setQuery] = React.useState<string>('');
 
   const {
     field: { onChange, value },
     fieldState: { error },
-  } = useController({ name, control });
+  } = useController({ name: name as Path<TControl>, control });
 
   return (
     <View className={cn('', wrapperClassName)}>

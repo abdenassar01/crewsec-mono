@@ -12,9 +12,7 @@ import {
 } from 'react-native';
 import {
   KeyboardAvoidingView,
-  useKeyboardAnimation,
 } from 'react-native-keyboard-controller';
-import Animated from 'react-native-reanimated';
 
 import { Button, colors } from '@/components/ui';
 import {
@@ -64,7 +62,7 @@ interface Props {
   onSubmit?: (_data: UpdateUserFormValues) => Promise<void>;
 }
 
-export function UpdateUserForm({
+export function UpdateClientParkingForm({
   currentStep,
   pending,
   setCurrentStep,
@@ -72,12 +70,6 @@ export function UpdateUserForm({
   parking,
 }: Props) {
   const { height: _height } = useWindowDimensions();
-  const { height, progress } = useKeyboardAnimation();
-
-  const scale = progress.interpolate({
-    inputRange: [0, 1],
-    outputRange: [1, 2],
-  });
 
   const { control, handleSubmit, trigger } = useForm<UpdateUserFormValues>({
     resolver: zodResolver(updateUserFormSchema),
@@ -103,7 +95,7 @@ export function UpdateUserForm({
         );
         break;
       case 2:
-        trigger(['image', 'parkingName', 'description']).then(
+        trigger(['image', 'parkingName', 'website', 'description']).then(
           (valid) => valid && setCurrentStep((prev) => prev + 1),
         );
         break;
@@ -140,16 +132,6 @@ export function UpdateUserForm({
       className=""
     >
       <ScrollView showsVerticalScrollIndicator={false}>
-        <Animated.View
-          style={{
-            width: 50,
-            height: 50,
-            backgroundColor: '#17fc03',
-            borderRadius: 15,
-            // 2. we can apply any transformations we want
-            transform: [{ translateY: height }, { scale }],
-          }}
-        />
         <View style={{ height: _height - 240 }}>{getStep()}</View>
       </ScrollView>
       <View className="flex-row justify-end gap-[2%]">

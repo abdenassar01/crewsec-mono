@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { type Control, useController } from 'react-hook-form';
 import { Pressable, Text, View } from 'react-native';
 
-import { cn } from '@/lib';
+import { cn, formatTimeSeconds } from '@/lib';
 
 interface TimerCountUpProps {
   control: Control<any>;
@@ -23,7 +23,7 @@ export function TimerCountUp({
 }: TimerCountUpProps) {
   const [elapsedTime, setElapsedTime] = useState(initialTime);
   const [isRunning, setIsRunning] = useState(false);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startTimeRef = useRef<number | null>(null);
 
   const { field: startDateField } = useController({
@@ -37,16 +37,6 @@ export function TimerCountUp({
     control,
     defaultValue: null,
   });
-
-  const formatTime = (timeInSeconds: number) => {
-    const hours = Math.floor(timeInSeconds / 3600);
-    const minutes = Math.floor((timeInSeconds % 3600) / 60);
-    const seconds = timeInSeconds % 60;
-
-    return `${hours.toString().padStart(2, '0')}:${minutes
-      .toString()
-      .padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  };
 
   const formatDate = (timestamp: number | null) => {
     if (!timestamp) return '--:--:--';
@@ -105,7 +95,7 @@ export function TimerCountUp({
     <View className="rounded-xl border border-dashed border-success-500 bg-white p-2 dark:bg-background-secondary-dark">
       <View className="mb-4 items-center justify-center rounded-lg bg-softSecondary p-2">
         <Text className="text-2xl font-bold text-secondary dark:text-white">
-          {formatTime(elapsedTime)}
+          {formatTimeSeconds(elapsedTime)}
         </Text>
       </View>
 

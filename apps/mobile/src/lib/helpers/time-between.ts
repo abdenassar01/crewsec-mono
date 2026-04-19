@@ -4,5 +4,5 @@ export function calculateTimeBetween(first: string, second: string) {
 
   const diff = date2.getTime() - date1.getTime();
 
-  return Math.round(diff / (24 * 60 * 60 * 60));
+  return Math.round(diff / (24 * 60 * 60 * 1000));
 }

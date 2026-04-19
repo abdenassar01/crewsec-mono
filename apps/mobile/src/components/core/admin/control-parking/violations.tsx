@@ -7,12 +7,12 @@ import { View } from 'react-native';
 import { StaticDataSelector } from '@/components/common';
 import { useDebounce } from '@/lib';
 
-interface Props {
-  control: Control<any>;
-  name: string;
+interface Props<T extends Record<string, any>> {
+  control: Control<T>;
+  name: keyof T & string;
 }
 
-export function ViolationSelector({ control, name }: Props) {
+export function ViolationSelector<T extends Record<string, any>>({ control, name }: Props<T>) {
   const [query, setQuery] = React.useState<string>('');
 
   const search = useDebounce(query, 500);

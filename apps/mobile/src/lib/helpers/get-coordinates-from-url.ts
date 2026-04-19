@@ -24,8 +24,8 @@ export const extractCoordinates = async (shortUrl: string) => {
     }
 
     if (match) {
-      const latitude = parseInt(match[1]);
-      const longitude = parseInt(match[2]);
+      const latitude = parseFloat(match[1]);
+      const longitude = parseFloat(match[2]);
       return { latitude, longitude };
     } else {
       console.log('Coordinates not found in the URL');

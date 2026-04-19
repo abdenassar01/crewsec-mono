@@ -4,21 +4,12 @@ import { Text, View } from 'react-native';
 
 import { Button, Modal, useModal } from '@/components/ui';
 import { useVehicleControlSession } from '@/contexts/vehicle-control-session-context';
+import { formatTimeMs } from '@/lib';
 
 interface SessionTimerProps {
   startTime: number | null;
   onStartSession: () => void;
 }
-
-const formatTime = (ms: number): string => {
-  const totalSeconds = Math.floor(ms / 1000);
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
-  return `${hours.toString().padStart(2, '0')}:${minutes
-    .toString()
-    .padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-};
 
 export function SessionTimer({ startTime, onStartSession }: SessionTimerProps) {
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -38,7 +29,7 @@ export function SessionTimer({ startTime, onStartSession }: SessionTimerProps) {
       {startTime ? (
         <>
           <Text className="border-success-500 text-xl font-bold text-success-500">
-            {formatTime(elapsedTime)}
+            {formatTimeMs(elapsedTime)}
           </Text>
           <EndSession />
         </>

@@ -5,6 +5,7 @@ import { useSafeMutation } from '@/hooks/use-convex-hooks';
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { View } from 'react-native';
+import { showMessage } from 'react-native-flash-message';
 
 import { Button, ControlledInput } from '@/components/ui';
 
@@ -21,12 +22,15 @@ export function TownViolationTab() {
     api.staticData.createLocationViolation,
   );
 
-  const onSubmit = (data: LocationValidationFrom) => {
-    addViolationForTown({
+  const onSubmit = async (data: LocationValidationFrom) => {
+    const result = await addViolationForTown({
       locationId: data.location as Id<'locations'>,
       violationId: data.violation as Id<'violations'>,
       price: data.price,
     });
+    if (result !== null) {
+      showMessage({ message: 'Violation added successfully', type: 'success' });
+    }
   };
 
   return (
@@ -41,9 +45,8 @@ export function TownViolationTab() {
         keyboardType="number-pad"
       />
       <Button
-        // loading={isPending}
         label="Submit"
-        onPress={handleSubmit(onSubmit, (err) => console.log('ERR: ', err))}
+        onPress={handleSubmit(onSubmit)}
       />
     </View>
   );

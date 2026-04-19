@@ -42,13 +42,12 @@ export function LocationTab() {
   });
   const addLocation = useSafeMutation(api.staticData.createLocation);
 
-  const onSubmit = (location: z.infer<typeof staticDataSchema>) => {
+  const onSubmit = async (location: z.infer<typeof staticDataSchema>) => {
     try {
       setLoadingMutation(true);
-      addLocation({ label: location.label });
+      await addLocation({ label: location.label });
       showMessage({ message: 'Location added successfully', type: 'success' });
     } catch (ex) {
-      console.log('Exception: ', ex);
       showMessage({ message: "Can't add the location", type: 'danger' });
     } finally {
       setLoadingMutation(false);
