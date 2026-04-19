@@ -8,11 +8,11 @@ cmd = "pnpm install --frozen-lockfile"
 
 [phases.build]
 
-cmd = "pnpm --filter web build"
+cmd = "ln -sf ../../packages/backend/convex apps/web/convex && pnpm --filter web build"
 
 [start]
 
-cmd = "pnpm --filter web build && pnpm --filter web start"
+cmd = "ln -sf ../../packages/backend/convex apps/web/convex && pnpm --filter web start"
 
 [variables]
 
