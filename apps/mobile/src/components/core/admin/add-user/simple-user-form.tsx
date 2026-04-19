@@ -70,7 +70,7 @@ export function SimpleUserForm({
       className=""
     >
       <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={{ height: _height - 120 }} className="p-4">
+        <View style={{ height: _height - 150 }} className="p-4">
           <Text className="my-4 text-center font-bold text-secondary">
             Create {selectedRole === 'ADMIN' ? 'Admin' : 'Employee'} Account
           </Text>

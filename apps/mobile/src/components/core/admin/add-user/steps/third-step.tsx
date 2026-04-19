@@ -3,11 +3,11 @@ import { useTranslation } from 'react-i18next';
 
 import { ControlledInput, Text, View } from '@/components/ui';
 
-interface Props {
-  control: Control<any>;
+interface Props<T extends Record<string, any>> {
+  control: Control<T>;
 }
 
-export function AddUserThirdStep({ control }: Props) {
+export function AddUserThirdStep<T extends Record<string, any>>({ control }: Props<T>) {
   const { t } = useTranslation();
 
   return (
@@ -19,13 +19,13 @@ export function AddUserThirdStep({ control }: Props) {
         name="location"
         label={t('home.location')}
         placeholder={t('home.location')}
-        control={control}
+        control={control as any}
       />
       <ControlledInput
         name="address"
         label={t('forms.address')}
         placeholder={t('forms.address')}
-        control={control}
+        control={control as any}
       />
     </View>
   );

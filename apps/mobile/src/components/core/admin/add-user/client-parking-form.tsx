@@ -110,7 +110,7 @@ export function ClientParkingForm({
       className=""
     >
       <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={{ height: _height - 120 }} className="p-4">
+        <View style={{ height: _height - 150 }} className="p-4">
           {getStep()}
         </View>
       </ScrollView>

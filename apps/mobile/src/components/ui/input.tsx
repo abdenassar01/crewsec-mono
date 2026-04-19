@@ -73,7 +73,7 @@ type TRule<T extends FieldValues> =
 export type RuleType<T extends FieldValues> = { [name in keyof T]: TRule<T> };
 export type InputControllerType<T extends FieldValues> = {
   name: Path<T>;
-  control: Control<T>;
+  control: Control<any>;
   rules?: RuleType<T>;
 };
 

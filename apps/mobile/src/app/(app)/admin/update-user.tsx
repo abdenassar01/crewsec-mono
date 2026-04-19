@@ -21,7 +21,7 @@ export default function UpdateParking() {
 
   const data = useSafeQuery(
     api.parkings.getPublicParkingById,
-    parkingIdValue ? { parkingId: parkingIdValue as any } : undefined,
+    { parkingId: (parkingIdValue ?? '') as Id<'parkings'> },
   );
 
   const updateParkingAndUser = useSafeMutation(api.parkings.updateParkingAndUser);
@@ -71,8 +71,8 @@ export default function UpdateParking() {
                 parkingName: formData.parkingName,
                 description: formData.description,
                 location: formData.location,
-                website: formData.website,
-                address: formData.address,
+                website: formData.website || '',
+                address: formData.address || '',
                 imageStorageId: formData.image as any,
               });
             }}

@@ -104,14 +104,15 @@ export function UpdateClientParkingForm({
     }
   }
 
+  const c = control as any;
   const getStep = () => {
     switch (currentStep) {
       case 1:
-        return <AddUserFirstStep control={control} />;
+        return <AddUserFirstStep control={c} />;
       case 2:
-        return <AddUserSecondStep control={control} />;
+        return <AddUserSecondStep control={c} />;
       case 3:
-        return <AddUserThirdStep control={control} />;
+        return <AddUserThirdStep control={c} />;
       default:
         return null;
     }
@@ -132,7 +133,7 @@ export function UpdateClientParkingForm({
       className=""
     >
       <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={{ height: _height - 240 }}>{getStep()}</View>
+        <View style={{ height: _height - 200 }}>{getStep()}</View>
       </ScrollView>
       <View className="flex-row justify-end gap-[2%]">
         {currentStep !== 1 && (
