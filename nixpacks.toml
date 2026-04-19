@@ -12,7 +12,7 @@ cmd = "pnpm --filter web build"
 
 [start]
 
-cmd = "pnpm --filter web build && pnpm --filter web start"
+cmd = "pnpm --filter web start"
 
 [variables]
 
