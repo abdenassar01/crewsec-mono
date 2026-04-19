@@ -17,8 +17,6 @@ COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
 COPY --from=deps /app/packages/backend/node_modules ./packages/backend/node_modules
 COPY . .
 RUN cd apps/web && rm -rf convex && cp -r ../../packages/backend/convex ./convex
-ARG NEXT_PUBLIC_CONVEX_URL
-ENV NEXT_PUBLIC_CONVEX_URL=${NEXT_PUBLIC_CONVEX_URL}
 RUN pnpm --filter web build
 
 FROM base AS runner
