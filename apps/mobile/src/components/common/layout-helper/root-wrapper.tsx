@@ -17,6 +17,7 @@ export function RootWrapper({
       className={cn('pt-16 flex-1', className)}
     >
       {children}
+      <View className="h-6" />
     </View>
   );
 }

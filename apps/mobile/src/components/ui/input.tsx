@@ -17,8 +17,9 @@ import { tv } from 'tailwind-variants';
 
 import { cn } from '@/lib/helpers';
 
-import colors from './colors';
+import colors, { secondary } from './colors';
 import { Text } from './text';
+import { Ionicons } from '@expo/vector-icons';
 
 const inputTv = tv({
   slots: {
@@ -155,18 +156,10 @@ export const Input = React.forwardRef<NTextInput, NInputProps>((props, ref) => {
         <TouchableOpacity
           onPress={() => setIsPassword((prev) => !prev)}
           className={cn(
-            'absolute right-3 top-8',
-            isPassword ? 'text-gray-400' : 'text-gray-600',
+            'absolute right-3 top-10',
           )}
         >
-          <Image
-            className="size-5"
-            source={
-              isPassword
-                ? require('assets/icons/eye.png')
-                : require('assets/icons/eye-closed.png')
-            }
-          />
+          <Ionicons name={isPassword ? 'eye-off-outline' : 'eye-outline'} color={secondary} size={18} />
         </TouchableOpacity>
       )}
     </View>

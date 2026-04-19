@@ -1,6 +1,6 @@
 /* eslint-disable max-lines-per-function */
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Image } from 'react-native';
+import { Image, ScrollView } from 'react-native';
 import { useColorScheme } from 'react-native';
 import React, { useCallback } from 'react';
 import type { SubmitHandler } from 'react-hook-form';
@@ -64,9 +64,10 @@ export const LoginForm = ({ onSubmit = () => {}, loading }: LoginFormProps) => {
 
       <KeyboardAvoidingView
         behavior="padding"
-        keyboardVerticalOffset={0}
-        className="flex-1 justify-center"
+        keyboardVerticalOffset={10}
+        className="justify-center"
       >
+        <ScrollView showsVerticalScrollIndicator={false}>
         {loading && <ActivityIndicator size={50} color={colors.secondary} />}
         <View className="items-center justify-center">
           <Text
@@ -101,6 +102,7 @@ export const LoginForm = ({ onSubmit = () => {}, loading }: LoginFormProps) => {
             onPress={handleSubmit(onSubmit)}
           />
         </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </View>
   );

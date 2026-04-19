@@ -5,7 +5,7 @@ import { showMessage } from 'react-native-flash-message';
 import { RootWrapper } from '@/components/common';
 import type { LoginFormProps } from '@/components/login-form';
 import { LoginForm } from '@/components/login-form';
-import { FocusAwareStatusBar } from '@/components/ui';
+import { FocusAwareStatusBar, View } from '@/components/ui';
 import { authClient } from '@/lib/auth/auth-client';
 
 export default function Login() {
@@ -29,7 +29,7 @@ export default function Login() {
           setTimeout(() => replace('/'), 500);
           setLoading(false);
         },
-        onError: (error) => {
+        onError: (error) => { 
           console.log('AUTH: ', error);
           showMessage({
             message: error.error.message || 'Login failed',
@@ -41,7 +41,7 @@ export default function Login() {
     });
   };
   return (
-    <RootWrapper className="flex-1">
+    <RootWrapper className="">
       <FocusAwareStatusBar />
       <LoginForm onSubmit={onSubmit} loading={loading} />
     </RootWrapper>
