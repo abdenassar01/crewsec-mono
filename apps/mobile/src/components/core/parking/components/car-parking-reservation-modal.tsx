@@ -10,6 +10,8 @@ import { ScrollView } from 'react-native-gesture-handler';
 import { DateTimeFormatter } from '@/components/common';
 import { ActivityIndicator, Button, colors, Text, View } from '@/components/ui';
 
+import { CreateControlFeeModal } from './create-control-fee-modal';
+
 interface Props {
   callback?: () => void;
   openEdit?: () => void;
@@ -75,13 +77,19 @@ export function CarParkingReservationModal({
             )
           }
         />
-        {openEdit && (
-          <Button
-            label={t('manage-parking.expand-date')}
-            onPress={openEdit}
-            textClassName="text-sm"
+        <View className="flex-row gap-2">
+          <CreateControlFeeModal
+            vehicle={vehicle}
+            reference={vehicle.reference}
           />
-        )}
+          {openEdit && (
+            <Button
+              label={t('manage-parking.expand-date')}
+              onPress={openEdit}
+              textClassName="text-sm"
+            />
+          )}
+        </View>
       </View>
       <View className="h-10 w-full" />
     </ScrollView>

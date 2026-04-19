@@ -114,6 +114,52 @@ export const create = mutation({
   },
 });
 
+export const createFromVehicle = mutation({
+  args: {
+    reference: v.string(),
+    mark: v.string(),
+    townId: v.id('towns'),
+    locationViolationId: v.id('locationViolations'),
+    vehicleId: v.id('vehicles'),
+  },
+  handler: async (ctx, args) => {
+    const user = await getAuthenticatedUser(ctx);
+    if (!user) {
+      throw new Error('Not authenticated');
+    }
+
+    const vehicle = await ctx.db.get(args.vehicleId);
+    if (!vehicle) {
+      throw new Error('Vehicle not found');
+    }
+
+    const parking = await ctx.db
+      .query('parkings')
+      .withIndex('by_userId', (q) => q.eq('userId', user._id))
+      .unique();
+
+    if (!parking || vehicle.parkingId !== parking._id) {
+      throw new Error('Vehicle does not belong to your parking');
+    }
+
+    const now = Date.now();
+    await ctx.db.insert('controlFees', {
+      reference: args.reference,
+      mark: args.mark,
+      startDate: vehicle.joinDate,
+      endDate: vehicle.leaveDate || now,
+      isSignsChecked: false,
+      isPhotosTaken: false,
+      status: 'AWAITING',
+      townId: args.townId,
+      locationViolationId: args.locationViolationId,
+      galleryStorageIds: [],
+      createdAt: now,
+      createdBy: user._id,
+    });
+  },
+});
+
 export const update = mutation({
   args: {
     id: v.id('controlFees'),

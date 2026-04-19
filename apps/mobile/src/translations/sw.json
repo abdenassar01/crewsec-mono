@@ -83,6 +83,7 @@
     "house-number": "Lägenhetsnr",
     "image": "Bild",
     "lastname": "Efternamn",
+    "mark": "Märke / Registreringsnummer",
     "name": "Namn",
     "query": "Fråga",
     "name-placeholder": "Ditt namn",
@@ -103,6 +104,7 @@
     "security": "Parkering säkerställd",
     "step": "Steg {{step}}",
     "submit": "Skicka",
+    "submitting": "Skickar...",
     "success": {
       "item-added": "Objektet har lagts till framgångsrikt"
     },
@@ -165,7 +167,12 @@
     "preview": "Förhandsgranska",
     "print": "Skriv ut",
     "sign-checked": "Skylt kontrollerad",
-    "images-checked": "Bilder kontrollerade"
+    "images-checked": "Bilder kontrollerade",
+    "create-fee": "Kontrollavgift",
+    "select-town": "Välj stad",
+    "search-town": "Sök städer...",
+    "select-violation": "Välj överträdelse",
+    "search-violation": "Sök överträdelser..."
   },
   "not-found": "Ej tillhandahållet ännu",
   "noResults": "Inga resultat hittades",

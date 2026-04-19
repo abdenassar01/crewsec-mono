@@ -82,6 +82,7 @@
     "house-number": "Apartment number",
     "image": "Image",
     "lastname": "Lastname",
+    "mark": "Mark / License Plate",
     "name": "Name",
     "query": "Query",
     "name-placeholder": "Your name",
@@ -98,6 +99,7 @@
     "security": "Parking secured",
     "step": "Step {{step}}",
     "submit": "Submit",
+    "submitting": "Submitting...",
     "success": {
       "item-added": "Successfully added item"
     },
@@ -159,7 +161,12 @@
     "preview": "Preview",
     "print": "print",
     "sign-checked": "Sign checked",
-    "images-checked": "Images checked"
+    "images-checked": "Images checked",
+    "create-fee": "Control Fee",
+    "select-town": "Select Town",
+    "search-town": "Search towns...",
+    "select-violation": "Select Violation",
+    "search-violation": "Search violations..."
   },
   "not-found": "Not Provided Yet",
   "noResults": "No results found",
