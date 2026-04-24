@@ -63,11 +63,11 @@ export function FelparkeringResolveSheet({ id, isResolved }: Props) {
           'rounded-full p-1.5',
           resolved ? 'bg-green-500/20' : 'bg-orange-500/20',
         )}
-        disabled={resolved || user?.role !== 'ADMIN'}
+        disabled={resolved || (user?.role !== 'ADMIN' && user?.role !== 'SUPER_ADMIN')}
       >
         {resolved ? (
           <Image className="size-4" source={require('assets/icons/done.png')} />
-        ) : user?.role === 'ADMIN' ? (
+        ) : user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN' ? (
           <Image className="size-4" source={require('assets/icons/view.png')} />
         ) : (
           <Image

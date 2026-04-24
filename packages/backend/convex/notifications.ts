@@ -2,7 +2,7 @@ import { v } from 'convex/values';
 
 import { api } from './_generated/api';
 import { action, mutation, query } from './_generated/server';
-import { getAuthenticatedUser } from './auth/helpers';
+import { getAuthenticatedUser, getOrganizationId } from './auth/helpers';
 
 export const recordPushNotificationToken = mutation({
   args: {
@@ -36,6 +36,7 @@ export const recordPushNotificationToken = mutation({
         expoPushToken: args.token,
         deviceId: args.deviceId,
         lastUsed: Date.now(),
+        organizationId: getOrganizationId(user) ?? undefined,
       });
     }
   },
@@ -99,26 +100,59 @@ export const getTokensForUserIds = query({
 });
 
 export const getAdminUserIds = query({
-  handler: async (ctx) => {
-    const admins = await ctx.db
-      .query('users')
-      .withIndex('by_role', (q) => q.eq('role', 'ADMIN'))
-      .collect();
+  args: {
+    organizationId: v.optional(v.id('organizations')),
+  },
+  handler: async (ctx, args) => {
+    const admins = args.organizationId
+      ? await ctx.db
+          .query('users')
+          .withIndex('by_organizationId_and_role', (q) =>
+            q
+              .eq('organizationId', args.organizationId!)
+              .eq('role', 'ADMIN'),
+          )
+          .collect()
+      : await ctx.db
+          .query('users')
+          .withIndex('by_role', (q) => q.eq('role', 'ADMIN'))
+          .collect();
     return admins.map((a) => a._id);
   },
 });
 
 export const getManagerUserIds = query({
-  handler: async (ctx) => {
-    const admins = await ctx.db
-      .query('users')
-      .withIndex('by_role', (q) => q.eq('role', 'ADMIN'))
-      .collect();
+  args: {
+    organizationId: v.optional(v.id('organizations')),
+  },
+  handler: async (ctx, args) => {
+    const admins = args.organizationId
+      ? await ctx.db
+          .query('users')
+          .withIndex('by_organizationId_and_role', (q) =>
+            q
+              .eq('organizationId', args.organizationId!)
+              .eq('role', 'ADMIN'),
+          )
+          .collect()
+      : await ctx.db
+          .query('users')
+          .withIndex('by_role', (q) => q.eq('role', 'ADMIN'))
+          .collect();
 
-    const employees = await ctx.db
-      .query('users')
-      .withIndex('by_role', (q) => q.eq('role', 'EMPLOYEE'))
-      .collect();
+    const employees = args.organizationId
+      ? await ctx.db
+          .query('users')
+          .withIndex('by_organizationId_and_role', (q) =>
+            q
+              .eq('organizationId', args.organizationId!)
+              .eq('role', 'EMPLOYEE'),
+          )
+          .collect()
+      : await ctx.db
+          .query('users')
+          .withIndex('by_role', (q) => q.eq('role', 'EMPLOYEE'))
+          .collect();
 
     return [...admins, ...employees].map((m) => m._id);
   },
@@ -171,9 +205,15 @@ export const sendPushNotification = action({
 });
 
 export const sendPushNotificationToAdmins = action({
-  args: { title: v.string(), body: v.optional(v.string()) },
+  args: {
+    title: v.string(),
+    body: v.optional(v.string()),
+    organizationId: v.optional(v.id('organizations')),
+  },
   handler: async (ctx, args) => {
-    const userIds = await ctx.runQuery(api.notifications.getAdminUserIds);
+    const userIds = await ctx.runQuery(api.notifications.getAdminUserIds, {
+      organizationId: args.organizationId,
+    });
     const tokens = await ctx.runQuery(api.notifications.getTokensForUserIds, {
       userIds,
     });
@@ -184,9 +224,15 @@ export const sendPushNotificationToAdmins = action({
 });
 
 export const sendPushNotificationToManagers = action({
-  args: { title: v.string(), body: v.optional(v.string()) },
+  args: {
+    title: v.string(),
+    body: v.optional(v.string()),
+    organizationId: v.optional(v.id('organizations')),
+  },
   handler: async (ctx, args) => {
-    const userIds = await ctx.runQuery(api.notifications.getManagerUserIds);
+    const userIds = await ctx.runQuery(api.notifications.getManagerUserIds, {
+      organizationId: args.organizationId,
+    });
     const tokens = await ctx.runQuery(api.notifications.getTokensForUserIds, {
       userIds,
     });

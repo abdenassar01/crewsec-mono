@@ -12,7 +12,7 @@ import { ClientParkingForm } from './client-parking-form';
 import { RoleSelectionStep } from './role-selection-step';
 import { SimpleUserForm } from './simple-user-form';
 
-type UserRole = 'ADMIN' | 'EMPLOYEE' | 'CLIENT' | null;
+type UserRole = 'ADMIN' | 'EMPLOYEE' | 'CLIENT' | 'SUPER_ADMIN' | null;
 
 export function NewAddUser() {
   const { t } = useTranslation();

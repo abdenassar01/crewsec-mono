@@ -8,6 +8,7 @@ import {
   CancelSquareFreeIcons,
   Settings05FreeIcons,
   ChartHistogramFreeIcons,
+  Building03FreeIcons,
 } from "@hugeicons/core-free-icons";
 import { SidebarLink } from "./sidebar-link";
 import { useSafeQuery } from "@/lib/hooks";
@@ -25,16 +26,27 @@ export const sidebarLinks = [
   { href: "/static-data" as const, label: "Static Data", icon: Settings05FreeIcons },
 ] as const;
 
+export const superAdminLinks = [
+  { href: "/organizations" as const, label: "Organizations", icon: Building03FreeIcons },
+];
+
 export  function DashboardSidebar() {
   const user = useSafeQuery(api.users.getCurrentUserProfile);
 
-  // Don't show sidebar for CLIENT users (they have their own UI)
   if (user?.role === 'CLIENT') {
     return null;
   }
 
   return (
     <>
+      {user?.role === 'SUPER_ADMIN' && (
+        <>
+          {superAdminLinks.map((link) => (
+            <SidebarLink key={link.href} {...link} />
+          ))}
+          <div className="my-2 border-t border-sidebar-border" />
+        </>
+      )}
       {sidebarLinks.map((link) => (
         <SidebarLink key={link.href} {...link} />
       ))}

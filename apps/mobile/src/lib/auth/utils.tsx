@@ -4,7 +4,7 @@ const TOKEN = 'token';
 
 export type TokenType = {
   access: string;
-  role: 'PARKING' | 'RESTORER' | 'ADMIN';
+  role: 'PARKING' | 'RESTORER' | 'ADMIN' | 'SUPER_ADMIN';
 };
 
 export const getToken = () => getItem<TokenType>(TOKEN);

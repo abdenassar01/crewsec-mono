@@ -19,14 +19,14 @@ const simpleUserFormSchema = z.object({
   password: z.string().min(8, 'Password must be at least 8 characters'),
   name: z.string().min(1, 'Name is required'),
   phone: z.string().optional(),
-  role: z.enum(['ADMIN', 'EMPLOYEE']),
+  role: z.enum(['ADMIN', 'EMPLOYEE', 'SUPER_ADMIN']),
   avatar: z.string().optional(),
 });
 
 export type SimpleUserFormValues = z.infer<typeof simpleUserFormSchema>;
 
 interface Props {
-  selectedRole: 'ADMIN' | 'EMPLOYEE';
+  selectedRole: 'ADMIN' | 'EMPLOYEE' | 'SUPER_ADMIN';
   onSubmit?: (_data: SimpleUserFormValues) => Promise<void>;
   onBack?: () => void;
   pending?: boolean;

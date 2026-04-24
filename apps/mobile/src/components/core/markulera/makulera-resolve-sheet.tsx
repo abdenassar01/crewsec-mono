@@ -60,11 +60,11 @@ export function MakuleraResolveSheet({ id, isResolved }: Props) {
           'rounded-full p-1.5',
           resolved ? 'bg-green-500' : 'bg-blue-500',
         )}
-        disabled={resolved || user?.role !== 'ADMIN'}
+        disabled={resolved || (user?.role !== 'ADMIN' && user?.role !== 'SUPER_ADMIN')}
       >
         {resolved ? (
           <Image className="size-4" source={require('assets/icons/done.png')} />
-        ) : user?.role === 'ADMIN' ? (
+        ) : user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN' ? (
           <Image className="size-4" source={require('assets/icons/view.png')} />
         ) : (
           <Image

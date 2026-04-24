@@ -3,26 +3,41 @@ import { v } from 'convex/values';
 import { hashPassword } from 'better-auth/crypto';
 
 import { mutation, query } from './_generated/server';
-import type { Doc } from './_generated/dataModel';
+import type { Doc, Id } from './_generated/dataModel';
 import { authComponent, createAuth } from './auth';
 import { components } from './_generated/api';
 import {
   AdminAuthError,
   getAuthenticatedUser,
+  getOrganizationId,
   requireAdmin,
+  verifyOrgOwnership,
 } from './auth/helpers';
 import { type CustomResponse, ErrorCodes, failure, success } from './util';
 
-// Query to get all users from Convex users table
 export const list = query({
   args: { paginationOpts: paginationOptsValidator },
   handler: async (ctx, args) => {
-    await requireAdmin(ctx);
-    const users = await ctx.db
-      .query('users')
-      .filter((q) => q.eq(q.field('enabled'), true))
-      .order('desc')
-      .paginate(args.paginationOpts);
+    const user = await requireAdmin(ctx);
+    const orgId = getOrganizationId(user);
+
+    let users;
+    if (orgId) {
+      users = await ctx.db
+        .query('users')
+        .withIndex('by_organizationId', (q) =>
+          q.eq('organizationId', orgId),
+        )
+        .filter((q) => q.eq(q.field('enabled'), true))
+        .order('desc')
+        .paginate(args.paginationOpts);
+    } else {
+      users = await ctx.db
+        .query('users')
+        .filter((q) => q.eq(q.field('enabled'), true))
+        .order('desc')
+        .paginate(args.paginationOpts);
+    }
     return users;
   },
 });
@@ -36,19 +51,31 @@ export const getUsersByRole = query({
     ),
   },
   handler: async (ctx, args) => {
-    await requireAdmin(ctx);
-    const users = await ctx.db
-      .query('users')
-      .withIndex('by_role', (q) => q.eq('role', args.role))
-      .collect();
+    const user = await requireAdmin(ctx);
+    const orgId = getOrganizationId(user);
+
+    let users;
+    if (orgId) {
+      users = await ctx.db
+        .query('users')
+        .withIndex('by_organizationId_and_role', (q) =>
+          q.eq('organizationId', orgId).eq('role', args.role),
+        )
+        .collect();
+    } else {
+      users = await ctx.db
+        .query('users')
+        .withIndex('by_role', (q) => q.eq('role', args.role))
+        .collect();
+    }
 
     const usersWithAvatarUrls = await Promise.all(
       users
-        .filter((user) => user.enabled)
-        .map(async (user) => ({
-          ...user,
-          avatarUrl: user.avatar
-            ? (await ctx.storage.getUrl(user.avatar)) || ''
+        .filter((u) => u.enabled)
+        .map(async (u) => ({
+          ...u,
+          avatarUrl: u.avatar
+            ? (await ctx.storage.getUrl(u.avatar)) || ''
             : '',
         })),
     );
@@ -57,7 +84,6 @@ export const getUsersByRole = query({
   },
 });
 
-// Query to get current user's profile from Convex users table
 export const getCurrentUserProfile = query({
   args: {},
   handler: async (ctx) => {
@@ -85,7 +111,6 @@ export const getCurrentUserProfile = query({
   },
 });
 
-// Query to get user by ID from Convex users table
 export const getById = query({
   args: { userId: v.optional(v.id('users')) },
   handler: async (ctx, args): Promise<CustomResponse<typeof user>> => {
@@ -114,9 +139,7 @@ export const getById = query({
   },
 });
 
-// Function to sync user from Better Auth to Convex users table
 export const syncUserToTable = async (ctx: any, betterAuthUser: any) => {
-  // Check if user already exists
   const existingUser = await ctx.db
     .query('users')
     .withIndex('by_email', (q: any) => q.eq('email', betterAuthUser.email))
@@ -126,13 +149,13 @@ export const syncUserToTable = async (ctx: any, betterAuthUser: any) => {
     return existingUser._id;
   }
 
-  // Create new user in Convex users table
   const userId = await ctx.db.insert('users', {
     email: betterAuthUser.email,
     name: betterAuthUser.name || betterAuthUser.email.split('@')[0],
     role: betterAuthUser.role || 'CLIENT',
     enabled: betterAuthUser.enabled ?? true,
-    userId: betterAuthUser.id, // Store the Better Auth user ID
+    userId: betterAuthUser.id,
+    organizationId: (betterAuthUser.organizationId as Id<'organizations'>) || undefined,
   });
 
   return userId;
@@ -199,8 +222,9 @@ export const create = mutation({
     ctx,
     args,
   ): Promise<CustomResponse<{ userId: typeof userId }>> => {
+    let currentUser: any;
     try {
-      await requireAdmin(ctx);
+      currentUser = await requireAdmin(ctx);
     } catch (e) {
       if (e instanceof AdminAuthError) {
         return failure('Admin role required', ErrorCodes.FORBIDDEN);
@@ -223,6 +247,8 @@ export const create = mutation({
       );
     }
 
+    const orgId = getOrganizationId(currentUser);
+
     const userId = await ctx.db.insert('users', {
       email: args.email,
       name: args.name,
@@ -231,6 +257,7 @@ export const create = mutation({
       ocr: args.ocr,
       enabled: true,
       userId: session.user.id,
+      organizationId: orgId ?? undefined,
     });
 
     return success({ userId });
@@ -251,7 +278,16 @@ export const update = mutation({
     enabled: v.boolean(),
   },
   handler: async (ctx, args) => {
-    await requireAdmin(ctx);
+    const currentUser = await requireAdmin(ctx);
+
+    const targetUser = await ctx.db.get(args.userId);
+    if (
+      targetUser &&
+      !verifyOrgOwnership(currentUser, targetUser.organizationId)
+    ) {
+      throw new Error('Not authorized to update this user');
+    }
+
     await ctx.db.patch(args.userId, {
       email: args.email,
       name: args.name,
@@ -268,18 +304,24 @@ export const deleteUser = mutation({
     ctx,
     args,
   ): Promise<CustomResponse<{ userId: typeof args.userId }>> => {
+    let currentUser: any;
     try {
-      await requireAdmin(ctx);
+      currentUser = await requireAdmin(ctx);
     } catch (e) {
       if (e instanceof AdminAuthError) {
         return failure('Admin role required', ErrorCodes.FORBIDDEN);
       }
       throw e;
     }
+
     const user = await ctx.db.get(args.userId);
 
     if (!user) {
       return failure('User not found', ErrorCodes.NOT_FOUND);
+    }
+
+    if (!verifyOrgOwnership(currentUser, user.organizationId)) {
+      return failure('Not authorized', ErrorCodes.FORBIDDEN);
     }
 
     if (!user.enabled) {
@@ -297,12 +339,17 @@ export const resetUserPassword = mutation({
     newPassword: v.string(),
   },
   handler: async (ctx, args): Promise<CustomResponse<{ success: boolean }>> => {
-    await requireAdmin(ctx);
+    const currentUser = await requireAdmin(ctx);
 
     const user = await ctx.db.get(args.userId);
     if (!user) {
       return failure('User not found', ErrorCodes.NOT_FOUND);
     }
+
+    if (!verifyOrgOwnership(currentUser, user.organizationId)) {
+      return failure('Not authorized', ErrorCodes.FORBIDDEN);
+    }
+
     if (!user.userId) {
       return failure(
         'User does not have an associated auth userId',

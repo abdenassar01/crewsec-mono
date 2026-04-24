@@ -20,7 +20,7 @@ const adminUserFormSchema = z.object({
   email: z.string().email('Invalid email address'),
   name: z.string().min(1, 'Name is required'),
   phone: z.string().optional(),
-  role: z.enum(['ADMIN', 'EMPLOYEE']),
+  role: z.enum(['ADMIN', 'EMPLOYEE', 'SUPER_ADMIN']),
   enabled: z.boolean(),
 });
 
@@ -33,7 +33,7 @@ interface User {
   name: string;
   phone?: string;
   avatar?: Id<'_storage'>;
-  role: 'ADMIN' | 'EMPLOYEE' | 'CLIENT';
+  role: 'ADMIN' | 'EMPLOYEE' | 'CLIENT' | 'SUPER_ADMIN';
   enabled?: boolean;
   userId: string;
 }
@@ -54,7 +54,9 @@ export function UpdateUserForm({ onSubmit, user, pending = false }: Props) {
       name: user?.name || '',
       phone: user?.phone || '',
       role:
-        user?.role === 'ADMIN' || user?.role === 'EMPLOYEE'
+        user?.role === 'ADMIN' ||
+        user?.role === 'EMPLOYEE' ||
+        user?.role === 'SUPER_ADMIN'
           ? user.role
           : 'EMPLOYEE',
       enabled: true,
@@ -62,6 +64,7 @@ export function UpdateUserForm({ onSubmit, user, pending = false }: Props) {
   });
 
   const roleOptions = [
+    { label: 'Super Admin', value: 'SUPER_ADMIN' },
     { label: 'Admin', value: 'ADMIN' },
     { label: 'Employee', value: 'EMPLOYEE' },
   ];

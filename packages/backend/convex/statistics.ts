@@ -1,11 +1,8 @@
 import { v } from 'convex/values';
 import { query } from './_generated/server';
-import { requireAdmin, requireAdminOrEmployee, getAuthenticatedUser } from './auth/helpers';
+import { requireAdmin, requireAdminOrEmployee, getOrganizationId } from './auth/helpers';
 import { CustomResponse, failure, success, ErrorCodes } from './util';
 
-/**
- * Get ISO week number from a date
- */
 function getISOWeek(date: Date): number {
   const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
   const dayNum = d.getUTCDay() || 7;
@@ -14,9 +11,6 @@ function getISOWeek(date: Date): number {
   return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
 }
 
-/**
- * Get control fee statistics grouped by time period
- */
 export const getControlFeeStats = query({
   args: {
     startDate: v.optional(v.number()),
@@ -24,21 +18,22 @@ export const getControlFeeStats = query({
     groupBy: v.optional(v.union(v.literal('day'), v.literal('week'), v.literal('month'))),
   },
   handler: async (ctx, args) => {
-    await requireAdmin(ctx);
+    const user = await requireAdmin(ctx);
+    const orgId = getOrganizationId(user);
     const now = Date.now();
     const startDate = args.startDate ?? now - 30 * 24 * 60 * 60 * 1000;
     const endDate = args.endDate ?? now;
     const groupBy = args.groupBy ?? 'day';
 
-    // Get all control fees
-    const allControlFees = await ctx.db.query('controlFees').collect();
+    let allControlFees = await ctx.db.query('controlFees').collect();
+    if (orgId) {
+      allControlFees = allControlFees.filter((f) => f.organizationId === orgId);
+    }
 
-    // Filter by date range
     const filteredFees = allControlFees.filter(
       (fee) => fee.startDate >= startDate && fee.startDate <= endDate,
     );
 
-    // Group by time period
     const groupedData: Record<string, number> = {};
 
     filteredFees.forEach((fee) => {
@@ -46,21 +41,18 @@ export const getControlFeeStats = query({
       let key: string;
 
       if (groupBy === 'day') {
-        key = date.toISOString().split('T')[0]; // YYYY-MM-DD
+        key = date.toISOString().split('T')[0];
       } else if (groupBy === 'week') {
-        // Return ISO week number for proper sorting
         const weekStart = new Date(date);
         weekStart.setDate(date.getDate() - date.getDay());
         key = `${date.getFullYear()}-W${String(getISOWeek(date)).padStart(2, '0')}`;
       } else {
-        // month
         key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
       }
 
       groupedData[key] = (groupedData[key] || 0) + 1;
     });
 
-    // Convert to array and sort
     const data = Object.entries(groupedData)
       .map(([label, value]) => ({ label, value }))
       .sort((a, b) => a.label.localeCompare(b.label));
@@ -69,21 +61,22 @@ export const getControlFeeStats = query({
   },
 });
 
-/**
- * Get control fee statistics by status
- */
 export const getControlFeeByStatus = query({
   args: {
     startDate: v.optional(v.number()),
     endDate: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    await requireAdmin(ctx);
+    const user = await requireAdmin(ctx);
+    const orgId = getOrganizationId(user);
     const now = Date.now();
     const startDate = args.startDate ?? now - 30 * 24 * 60 * 60 * 1000;
     const endDate = args.endDate ?? now;
 
-    const allControlFees = await ctx.db.query('controlFees').collect();
+    let allControlFees = await ctx.db.query('controlFees').collect();
+    if (orgId) {
+      allControlFees = allControlFees.filter((f) => f.organizationId === orgId);
+    }
 
     const filteredFees = allControlFees.filter(
       (fee) => fee.startDate >= startDate && fee.startDate <= endDate,
@@ -99,9 +92,6 @@ export const getControlFeeByStatus = query({
   },
 });
 
-/**
- * Get control fee statistics for a specific status over time
- */
 export const getControlFeeStatsByStatus = query({
   args: {
     startDate: v.optional(v.number()),
@@ -110,13 +100,17 @@ export const getControlFeeStatsByStatus = query({
     status: v.optional(v.union(v.literal('AWAITING'), v.literal('PAID'), v.literal('CANCELED'), v.literal('CONFLICT'))),
   },
   handler: async (ctx, args) => {
-    await requireAdmin(ctx);
+    const user = await requireAdmin(ctx);
+    const orgId = getOrganizationId(user);
     const now = Date.now();
     const startDate = args.startDate ?? now - 30 * 24 * 60 * 60 * 1000;
     const endDate = args.endDate ?? now;
     const groupBy = args.groupBy ?? 'day';
 
-    const allControlFees = await ctx.db.query('controlFees').collect();
+    let allControlFees = await ctx.db.query('controlFees').collect();
+    if (orgId) {
+      allControlFees = allControlFees.filter((f) => f.organizationId === orgId);
+    }
 
     const filteredFees = allControlFees.filter(
       (fee) => fee.startDate >= startDate && fee.startDate <= endDate,
@@ -151,9 +145,6 @@ export const getControlFeeStatsByStatus = query({
   },
 });
 
-/**
- * Get parking statistics for a specific parking
- */
 export const getParkingStats = query({
   args: {
     parkingId: v.id('parkings'),
@@ -165,7 +156,6 @@ export const getParkingStats = query({
       return failure('Parking not found', ErrorCodes.NOT_FOUND);
     }
 
-    // Get all vehicles for this parking
     const vehicles = await ctx.db
       .query('vehicles')
       .withIndex('by_parkingId', (q) => q.eq('parkingId', args.parkingId))
@@ -173,13 +163,9 @@ export const getParkingStats = query({
 
     const now = Date.now();
 
-    // Count currently parked vehicles (leaveDate > now)
     const currentlyParked = vehicles.filter((v) => v.leaveDate > now).length;
-
-    // Count total vehicles
     const totalVehicles = vehicles.length;
 
-    // Get canceled violations
     const canceledViolations = await ctx.db
       .query('canceledViolations')
       .withIndex('by_parkingId', (q) => q.eq('parkingId', args.parkingId))
@@ -188,7 +174,6 @@ export const getParkingStats = query({
     const unresolvedViolations = canceledViolations.filter((v) => !v.resolved).length;
     const resolvedViolations = canceledViolations.filter((v) => v.resolved).length;
 
-    // Count by cause
     const felparkeringCount = canceledViolations.filter(
       (v) => v.cause === 'FELPARKERING',
     ).length;
@@ -208,28 +193,28 @@ export const getParkingStats = query({
   },
 });
 
-/**
- * Get global statistics for all parkings (admin only)
- */
 export const getGlobalStats = query({
   handler: async (ctx) => {
-    await requireAdmin(ctx);
-    const allParkings = await ctx.db.query('parkings').collect();
+    const user = await requireAdmin(ctx);
+    const orgId = getOrganizationId(user);
 
-    // Get all vehicles
-    const allVehicles = await ctx.db.query('vehicles').collect();
+    let allParkings = await ctx.db.query('parkings').collect();
+    let allVehicles = await ctx.db.query('vehicles').collect();
+    let allCanceledViolations = await ctx.db.query('canceledViolations').collect();
+    let allControlFees = await ctx.db.query('controlFees').collect();
+
+    if (orgId) {
+      allParkings = allParkings.filter((p) => p.organizationId === orgId);
+      allVehicles = allVehicles.filter((v) => v.organizationId === orgId);
+      allCanceledViolations = allCanceledViolations.filter((v) => v.organizationId === orgId);
+      allControlFees = allControlFees.filter((f) => f.organizationId === orgId);
+    }
 
     const now = Date.now();
     const currentlyParked = allVehicles.filter((v) => v.leaveDate > now).length;
 
-    // Get all canceled violations
-    const allCanceledViolations = await ctx.db.query('canceledViolations').collect();
-
     const unresolvedViolations = allCanceledViolations.filter((v) => !v.resolved).length;
     const resolvedViolations = allCanceledViolations.filter((v) => v.resolved).length;
-
-    // Get all control fees
-    const allControlFees = await ctx.db.query('controlFees').collect();
 
     const controlFeesByStatus = {
       AWAITING: allControlFees.filter((f) => f.status === 'AWAITING').length,
@@ -251,27 +236,27 @@ export const getGlobalStats = query({
   },
 });
 
-/**
- * Get control fees statistics by agent (user who created them)
- */
 export const getControlFeesByAgent = query({
   args: {
     startDate: v.optional(v.number()),
     endDate: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    await requireAdmin(ctx);
+    const user = await requireAdmin(ctx);
+    const orgId = getOrganizationId(user);
     const now = Date.now();
     const startDate = args.startDate ?? now - 30 * 24 * 60 * 60 * 1000;
     const endDate = args.endDate ?? now;
 
-    const allControlFees = await ctx.db.query('controlFees').collect();
+    let allControlFees = await ctx.db.query('controlFees').collect();
+    if (orgId) {
+      allControlFees = allControlFees.filter((f) => f.organizationId === orgId);
+    }
 
     const filteredFees = allControlFees.filter(
       (fee) => fee.startDate >= startDate && fee.startDate <= endDate,
     );
 
-    // Group by createdBy
     const groupedByAgent: Record<string, { total: number; paid: number }> = {};
 
     filteredFees.forEach((fee) => {
@@ -285,7 +270,6 @@ export const getControlFeesByAgent = query({
       }
     });
 
-    // Get user names for each agent
     const result = await Promise.all(
       Object.entries(groupedByAgent).map(async ([agentId, stats]) => {
         if (agentId === 'unknown') {
@@ -301,7 +285,6 @@ export const getControlFeesByAgent = query({
       }),
     );
 
-    // Sort by total descending
     return result.sort((a, b) => b.total - a.total);
   },
 });
@@ -312,12 +295,16 @@ export const getControlFeesStatistics = query({
     endDate: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    await requireAdminOrEmployee(ctx);
+    const user = await requireAdminOrEmployee(ctx);
+    const orgId = getOrganizationId(user);
     const now = Date.now();
     const startDate = args.startDate ?? now - 30 * 24 * 60 * 60 * 1000;
     const endDate = args.endDate ?? now;
 
-    const allFees = await ctx.db.query('controlFees').collect();
+    let allFees = await ctx.db.query('controlFees').collect();
+    if (orgId) {
+      allFees = allFees.filter((f) => f.organizationId === orgId);
+    }
     const filtered = allFees.filter(
       (f) => f.startDate >= startDate && f.startDate <= endDate,
     );
@@ -351,13 +338,17 @@ export const getControlFeesEvolution = query({
     status: v.optional(v.union(v.literal('AWAITING'), v.literal('PAID'), v.literal('CANCELED'), v.literal('CONFLICT'))),
   },
   handler: async (ctx, args) => {
-    await requireAdminOrEmployee(ctx);
+    const user = await requireAdminOrEmployee(ctx);
+    const orgId = getOrganizationId(user);
     const now = Date.now();
     const startDate = args.startDate ?? now - 30 * 24 * 60 * 60 * 1000;
     const endDate = args.endDate ?? now;
     const groupBy = args.groupBy ?? 'day';
 
-    const allFees = await ctx.db.query('controlFees').collect();
+    let allFees = await ctx.db.query('controlFees').collect();
+    if (orgId) {
+      allFees = allFees.filter((f) => f.organizationId === orgId);
+    }
     let filtered = allFees.filter(
       (f) => f.startDate >= startDate && f.startDate <= endDate,
     );
@@ -396,7 +387,6 @@ export const getMyParkingStats = query({
       return failure('Not authenticated', ErrorCodes.UNAUTHORIZED);
     }
 
-    // Find user in our users table
     const userProfile = await ctx.db
       .query('users')
       .withIndex('by_email', (q) => q.eq('email', user.email!))
@@ -406,7 +396,6 @@ export const getMyParkingStats = query({
       return failure('User profile not found', ErrorCodes.NOT_FOUND);
     }
 
-    // Find user's parking
     const parking = await ctx.db
       .query('parkings')
       .withIndex('by_userId', (q) => q.eq('userId', userProfile._id))
@@ -416,7 +405,6 @@ export const getMyParkingStats = query({
       return failure('This account is not associated to a parking', ErrorCodes.NOT_FOUND);
     }
 
-    // Get vehicles for this parking
     const vehicles = await ctx.db
       .query('vehicles')
       .withIndex('by_parkingId', (q) => q.eq('parkingId', parking._id))
@@ -425,7 +413,6 @@ export const getMyParkingStats = query({
     const now = Date.now();
     const currentlyParked = vehicles.filter((v) => v.leaveDate > now).length;
 
-    // Get canceled violations for this parking
     const canceledViolations = await ctx.db
       .query('canceledViolations')
       .withIndex('by_parkingId', (q) => q.eq('parkingId', parking._id))
@@ -434,7 +421,6 @@ export const getMyParkingStats = query({
     const unresolvedViolations = canceledViolations.filter((v) => !v.resolved).length;
     const resolvedViolations = canceledViolations.filter((v) => v.resolved).length;
 
-    // Count by cause
     const felparkeringCount = canceledViolations.filter(
       (v) => v.cause === 'FELPARKERING',
     ).length;

@@ -15,7 +15,8 @@ export default function Home() {
   const user = useSafeQuery(api.users.getCurrentUserProfile);
 
   if (user === undefined) return <ActivityIndicator size={24} />;
-  if (user?.role === 'ADMIN') return <Redirect href="/admin" />;
+  if (user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN')
+    return <Redirect href="/admin" />;
 
   return (
     <ScrollView showsVerticalScrollIndicator={false} className="flex-1">

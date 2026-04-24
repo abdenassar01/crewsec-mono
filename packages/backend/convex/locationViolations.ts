@@ -1,12 +1,19 @@
 import { v } from 'convex/values';
 import { query } from './_generated/server';
-import { requireAdmin } from './auth/helpers';
+import { requireAdmin, getOrganizationId } from './auth/helpers';
 
-// Query to get all location violations
 export const list = query({
   args: {},
   handler: async (ctx) => {
-    await requireAdmin(ctx);
+    const user = await requireAdmin(ctx);
+    const orgId = getOrganizationId(user);
+    if (orgId) {
+      return await ctx.db
+        .query('locationViolations')
+        .withIndex('by_organizationId', (q) => q.eq('organizationId', orgId))
+        .order('asc')
+        .collect();
+    }
     return await ctx.db.query('locationViolations').order('asc').collect();
   },
 });
@@ -17,10 +24,6 @@ export const getViolationById = query({
   },
   handler: async (ctx, args) => {
     await requireAdmin(ctx);
-    return await ctx.db
-      .query('locationViolations')
-      .withIndex('by_id')
-      .filter((q) => q.eq(q.field('_id'), args.id))
-      .unique();
+    return await ctx.db.get(args.id);
   },
 });

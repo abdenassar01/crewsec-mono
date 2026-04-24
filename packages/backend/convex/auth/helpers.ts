@@ -1,6 +1,7 @@
+import { type Id } from '../_generated/dataModel';
 import { type MutationCtx, type QueryCtx } from '../_generated/server';
 import { authComponent } from '../auth';
-import { ErrorCodes, failure } from '../util';
+import { ErrorCodes } from '../util';
 
 export const getAuthenticatedUser = async (ctx: QueryCtx | MutationCtx) => {
   try {
@@ -22,16 +23,22 @@ export const getAuthenticatedUser = async (ctx: QueryCtx | MutationCtx) => {
   }
 };
 
-/**
- * Error thrown when admin authorization fails. Functions returning CustomResponse
- * can catch this and convert it to a failure response.
- */
 export class AdminAuthError extends Error {
   public readonly code: number;
 
   constructor() {
     super('Admin role required');
     this.name = 'AdminAuthError';
+    this.code = ErrorCodes.FORBIDDEN;
+  }
+}
+
+export class SuperAdminAuthError extends Error {
+  public readonly code: number;
+
+  constructor() {
+    super('Super admin role required');
+    this.name = 'SuperAdminAuthError';
     this.code = ErrorCodes.FORBIDDEN;
   }
 }
@@ -46,31 +53,54 @@ export class AuthError extends Error {
   }
 }
 
-/**
- * Require the current user to have admin role.
- * Throws AdminAuthError if the user is not authenticated or is not an admin.
- * Functions returning CustomResponse should catch this and return failure().
- */
 export const requireAdmin = async (ctx: QueryCtx | MutationCtx) => {
   const user = await getAuthenticatedUser(ctx);
 
-  if (user?.role !== 'ADMIN') {
+  if (user?.role !== 'ADMIN' && user?.role !== 'SUPER_ADMIN') {
     throw new AdminAuthError();
   }
 
   return user;
 };
 
-/**
- * Require the current user to be authenticated and have admin or employee role.
- * Throws AuthError if the user is not authenticated or is not an admin/employee.
- */
 export const requireAdminOrEmployee = async (ctx: QueryCtx | MutationCtx) => {
   const user = await getAuthenticatedUser(ctx);
 
-  if (user?.role !== 'ADMIN' && user?.role !== 'EMPLOYEE') {
+  if (
+    user?.role !== 'ADMIN' &&
+    user?.role !== 'SUPER_ADMIN' &&
+    user?.role !== 'EMPLOYEE'
+  ) {
     throw new AuthError();
   }
 
   return user;
+};
+
+export const requireSuperAdmin = async (ctx: QueryCtx | MutationCtx) => {
+  const user = await getAuthenticatedUser(ctx);
+
+  if (user?.role !== 'SUPER_ADMIN') {
+    throw new SuperAdminAuthError();
+  }
+
+  return user;
+};
+
+export const getOrganizationId = (
+  user: { role: string; organizationId?: Id<'organizations'> | null } | null,
+): Id<'organizations'> | null => {
+  if (!user) return null;
+  if (user.role === 'SUPER_ADMIN') return null;
+  return (user.organizationId as Id<'organizations'>) ?? null;
+};
+
+export const verifyOrgOwnership = (
+  user: { role: string; organizationId?: Id<'organizations'> | null } | null,
+  recordOrgId: Id<'organizations'> | undefined | null,
+): boolean => {
+  if (!user) return false;
+  if (user.role === 'SUPER_ADMIN') return true;
+  if (!recordOrgId) return true;
+  return user.organizationId === recordOrgId;
 };

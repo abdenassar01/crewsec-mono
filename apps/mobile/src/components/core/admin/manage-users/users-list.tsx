@@ -17,7 +17,7 @@ import { colors, Image } from '@/components/ui';
 import { DeleteUserModal } from '../update-user';
 
 type Props = {
-  role: 'EMPLOYEE' | 'ADMIN';
+  role: 'EMPLOYEE' | 'ADMIN' | 'SUPER_ADMIN';
 };
 
 export function UserManagementUsersList({ role }: Props) {

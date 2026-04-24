@@ -70,7 +70,7 @@ export default function AddMakulera() {
   };
 
   useEffect(() => {
-    if (user?.role !== 'ADMIN' && user?.role !== 'EMPLOYEE') {
+    if (user?.role !== 'ADMIN' && user?.role !== 'EMPLOYEE' && user?.role !== 'SUPER_ADMIN') {
       showMessage({
         type: 'warning',
         message: 'Access denied. Admin or employee role required.',

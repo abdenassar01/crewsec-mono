@@ -5,7 +5,7 @@ export const updateUserFormSchema = z.object({
   email: z.string().email('Invalid email address'),
   name: z.string().min(1, 'Name is required'),
   phone: z.string().optional(),
-  role: z.enum(['ADMIN', 'EMPLOYEE', 'CLIENT']).optional(),
+  role: z.enum(['ADMIN', 'EMPLOYEE', 'CLIENT', 'SUPER_ADMIN']).optional(),
 
   // Parking fields
   parkingName: z.string().min(1, 'Parking name is required'),

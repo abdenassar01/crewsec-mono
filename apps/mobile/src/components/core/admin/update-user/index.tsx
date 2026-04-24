@@ -48,7 +48,7 @@ interface ParkingWithUser {
     name: string;
     phone?: string;
     avatar?: Id<'_storage'>;
-    role: 'ADMIN' | 'EMPLOYEE' | 'CLIENT';
+    role: 'ADMIN' | 'EMPLOYEE' | 'CLIENT' | 'SUPER_ADMIN';
     enabled?: boolean;
     userId: string;
   } | null;

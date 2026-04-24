@@ -3,7 +3,11 @@ import { v } from 'convex/values';
 import { api } from './_generated/api';
 import { mutation, query } from './_generated/server';
 import { authComponent } from './auth';
-import { getAuthenticatedUser, requireAdmin } from './auth/helpers';
+import {
+  getAuthenticatedUser,
+  getOrganizationId,
+  requireAdmin,
+} from './auth/helpers';
 import { type CustomResponse, ErrorCodes, failure, success } from './util';
 
 const causeType = v.union(v.literal('FELPARKERING'), v.literal('MAKULERA'));
@@ -11,15 +15,29 @@ const causeType = v.union(v.literal('FELPARKERING'), v.literal('MAKULERA'));
 export const list = query({
   args: {},
   handler: async (ctx): Promise<CustomResponse<any>> => {
-    const authUser = await authComponent.getAuthUser(ctx);
+    const authUser = await getAuthenticatedUser(ctx);
 
     if (!authUser) {
       return failure('Not authenticated', ErrorCodes.UNAUTHORIZED);
     }
-    const violations = await ctx.db
-      .query('canceledViolations')
-      .order('desc')
-      .collect();
+
+    const orgId = getOrganizationId(authUser);
+
+    let violations;
+    if (orgId) {
+      violations = await ctx.db
+        .query('canceledViolations')
+        .withIndex('by_organizationId', (q) =>
+          q.eq('organizationId', orgId),
+        )
+        .order('desc')
+        .collect();
+    } else {
+      violations = await ctx.db
+        .query('canceledViolations')
+        .order('desc')
+        .collect();
+    }
     return success(violations);
   },
 });
@@ -27,16 +45,29 @@ export const list = query({
 export const listForCause = query({
   args: { cause: causeType },
   handler: async (ctx, args): Promise<CustomResponse<any>> => {
-    const authUser = await authComponent.getAuthUser(ctx);
+    const authUser = await getAuthenticatedUser(ctx);
 
     if (!authUser) {
       return failure('Not authenticated', ErrorCodes.UNAUTHORIZED);
     }
 
-    const violations = await ctx.db
-      .query('canceledViolations')
-      .withIndex('by_cause', (q) => q.eq('cause', args.cause))
-      .collect();
+    const orgId = getOrganizationId(authUser);
+
+    let violations;
+    if (orgId) {
+      violations = await ctx.db
+        .query('canceledViolations')
+        .withIndex('by_organizationId', (q) =>
+          q.eq('organizationId', orgId),
+        )
+        .filter((q) => q.eq(q.field('cause'), args.cause))
+        .collect();
+    } else {
+      violations = await ctx.db
+        .query('canceledViolations')
+        .withIndex('by_cause', (q) => q.eq('cause', args.cause))
+        .collect();
+    }
     return success(violations);
   },
 });
@@ -56,19 +87,27 @@ export const create = mutation({
 
     const parking = await ctx.db.get(args.parkingId);
 
-    if (!(authUser?.role === 'ADMIN' || parking?.userId === authUser?._id)) {
+    if (
+      !(
+        authUser?.role === 'ADMIN' ||
+        authUser?.role === 'SUPER_ADMIN' ||
+        parking?.userId === authUser?._id
+      )
+    ) {
       return failure('Not Authorized', ErrorCodes.FORBIDDEN);
     }
 
     const violationId = await ctx.db.insert('canceledViolations', {
       ...args,
       createdAt: Date.now(),
+      organizationId: getOrganizationId(authUser) ?? undefined,
     });
 
     try {
       ctx.scheduler.runAfter(0, api.notifications.sendPushNotificationToManagers, {
         title: 'Ny avbruten parkering',
         body: `En parkering har blitt avbrutt for referanse ${args.reference}. parking: ${parking?.name || 'Ukjent'}`,
+        organizationId: getOrganizationId(authUser) ?? undefined,
       });
     } catch (error) {
       console.error('Failed to send push notification:', error);
@@ -118,7 +157,13 @@ export const remove = mutation({
 
     const parking = await ctx.db.get(violation.parkingId);
 
-    if (!(authUser?.role === 'ADMIN' || parking?.userId === authUser?._id)) {
+    if (
+      !(
+        authUser?.role === 'ADMIN' ||
+        authUser?.role === 'SUPER_ADMIN' ||
+        parking?.userId === authUser?._id
+      )
+    ) {
       return failure('Not Authorized', ErrorCodes.FORBIDDEN);
     }
 
@@ -279,17 +324,31 @@ export const getUnresolvedByParkingIdAndCause = query({
 export const getUnresolvedCount = query({
   args: { cause: causeType },
   handler: async (ctx, args): Promise<CustomResponse<{ count: number }>> => {
-    const authUser = await authComponent.getAuthUser(ctx);
+    const authUser = await getAuthenticatedUser(ctx);
 
     if (!authUser) {
       return failure('Not authenticated', ErrorCodes.UNAUTHORIZED);
     }
-    const count = await ctx.db
-      .query('canceledViolations')
-      .withIndex('by_cause', (q) => q.eq('cause', args.cause))
-      .collect();
+
+    const orgId = getOrganizationId(authUser);
+
+    let all;
+    if (orgId) {
+      all = await ctx.db
+        .query('canceledViolations')
+        .withIndex('by_organizationId', (q) =>
+          q.eq('organizationId', orgId),
+        )
+        .filter((q) => q.eq(q.field('cause'), args.cause))
+        .collect();
+    } else {
+      all = await ctx.db
+        .query('canceledViolations')
+        .withIndex('by_cause', (q) => q.eq('cause', args.cause))
+        .collect();
+    }
     return success({
-      count: count.filter((item) => item.resolved !== true).length,
+      count: all.filter((item) => item.resolved !== true).length,
     });
   },
 });
@@ -361,15 +420,29 @@ export const resolveViolation = mutation({
 export const unresolvedByCause = query({
   args: { cause: causeType },
   handler: async (ctx, args): Promise<CustomResponse<any>> => {
-    const authUser = await authComponent.getAuthUser(ctx);
+    const authUser = await getAuthenticatedUser(ctx);
 
     if (!authUser) {
       return failure('Not authenticated', ErrorCodes.UNAUTHORIZED);
     }
-    const canceledByCause = await ctx.db
-      .query('canceledViolations')
-      .withIndex('by_cause', (q) => q.eq('cause', args.cause))
-      .collect();
+
+    const orgId = getOrganizationId(authUser);
+
+    let canceledByCause;
+    if (orgId) {
+      canceledByCause = await ctx.db
+        .query('canceledViolations')
+        .withIndex('by_organizationId', (q) =>
+          q.eq('organizationId', orgId),
+        )
+        .filter((q) => q.eq(q.field('cause'), args.cause))
+        .collect();
+    } else {
+      canceledByCause = await ctx.db
+        .query('canceledViolations')
+        .withIndex('by_cause', (q) => q.eq('cause', args.cause))
+        .collect();
+    }
 
     return success(canceledByCause.filter((item) => item.resolved !== true));
   },

@@ -8,7 +8,7 @@ export interface User {
   email: string;
   name: string;
   avatar?: string;
-  role: 'CLIENT' | 'EMPLOYEE' | 'ADMIN';
+  role: 'CLIENT' | 'EMPLOYEE' | 'ADMIN' | 'SUPER_ADMIN';
   userId: string;
 }
 

@@ -2,8 +2,7 @@ import { v } from 'convex/values';
 
 import type { Doc } from './_generated/dataModel';
 import { mutation, query } from './_generated/server';
-import { authComponent } from './auth';
-import { requireAdmin } from './auth/helpers';
+import { requireAdmin, getAuthenticatedUser, getOrganizationId } from './auth/helpers';
 import { type CustomResponse, ErrorCodes, failure, success } from './util';
 
 // --- Car Brands ---
@@ -12,17 +11,21 @@ export const listCarBrands = query({
     search: v.optional(v.string()),
   },
   handler: async (ctx, args): Promise<CustomResponse<any>> => {
-    const authUser = await authComponent.getAuthUser(ctx);
+    const user = await getAuthenticatedUser(ctx);
 
-    if (!authUser) {
+    if (!user) {
       return failure('Not authenticated', ErrorCodes.UNAUTHORIZED);
     }
-    const query = args.search
+    const orgId = getOrganizationId(user);
+    const q = args.search
       ? ctx.db
           .query('carBrands')
           .withSearchIndex('by_label', (q) => q.search('label', args.search!))
       : ctx.db.query('carBrands');
-    const results = await query.collect();
+    let results = await q.collect();
+    if (orgId) {
+      results = results.filter((r) => r.organizationId === orgId);
+    }
     return success(results);
   },
 });
@@ -30,8 +33,11 @@ export const listCarBrands = query({
 export const createCarBrand = mutation({
   args: { label: v.string() },
   handler: async (ctx, args) => {
-    await requireAdmin(ctx);
-    return ctx.db.insert('carBrands', args);
+    const user = await requireAdmin(ctx);
+    return ctx.db.insert('carBrands', {
+      ...args,
+      organizationId: getOrganizationId(user) ?? undefined,
+    });
   },
 });
 
@@ -56,33 +62,40 @@ export const listLocations = query({
     search: v.optional(v.string()),
   },
   handler: async (ctx, args): Promise<CustomResponse<Doc<'locations'>[]>> => {
-    const authUser = await authComponent.getAuthUser(ctx);
+    const user = await getAuthenticatedUser(ctx);
 
-    if (!authUser) {
+    if (!user) {
       return failure('Not authenticated', ErrorCodes.UNAUTHORIZED);
     }
 
-    const query = args.search
+    const orgId = getOrganizationId(user);
+    const q = args.search
       ? ctx.db
           .query('locations')
           .withSearchIndex('by_label', (q) => q.search('label', args.search!))
       : ctx.db.query('locations');
-    const results = await query.collect();
+    let results = await q.collect();
+    if (orgId) {
+      results = results.filter((r) => r.organizationId === orgId);
+    }
     return success(results);
   },
 });
 
 export const listLocationsWithTowns = query({
   handler: async (ctx): Promise<CustomResponse<any>> => {
-    const authUser = await authComponent.getAuthUser(ctx);
+    const user = await getAuthenticatedUser(ctx);
 
-    if (!authUser) {
+    if (!user) {
       return failure('Not authenticated', ErrorCodes.UNAUTHORIZED);
     }
 
-    const query = ctx.db.query('locations');
+    const orgId = getOrganizationId(user);
 
-    const locations = await query.collect();
+    let locations = await ctx.db.query('locations').collect();
+    if (orgId) {
+      locations = locations.filter((l) => l.organizationId === orgId);
+    }
 
     const results = await Promise.all(
       locations.map(async (location) => {
@@ -102,8 +115,11 @@ export const listLocationsWithTowns = query({
 export const createLocation = mutation({
   args: { label: v.string() },
   handler: async (ctx, args) => {
-    await requireAdmin(ctx);
-    return ctx.db.insert('locations', args);
+    const user = await requireAdmin(ctx);
+    return ctx.db.insert('locations', {
+      ...args,
+      organizationId: getOrganizationId(user) ?? undefined,
+    });
   },
 });
 
@@ -130,11 +146,13 @@ export const listTowns = query({
     locationId: v.optional(v.id('locations')),
   },
   handler: async (ctx, args): Promise<CustomResponse<any>> => {
-    const authUser = await authComponent.getAuthUser(ctx);
+    const user = await getAuthenticatedUser(ctx);
 
-    if (!authUser) {
+    if (!user) {
       return failure('Not authenticated', ErrorCodes.UNAUTHORIZED);
     }
+
+    const orgId = getOrganizationId(user);
 
     let results;
     if (args.search) {
@@ -152,6 +170,9 @@ export const listTowns = query({
     } else {
       results = await ctx.db.query('towns').collect();
     }
+    if (orgId) {
+      results = results.filter((r) => r.organizationId === orgId);
+    }
     return success(results);
   },
 });
@@ -162,24 +183,28 @@ export const listTownsByLocationId = query({
     search: v.optional(v.string()),
   },
   handler: async (ctx, args): Promise<CustomResponse<any>> => {
-    const authUser = await authComponent.getAuthUser(ctx);
+    const user = await getAuthenticatedUser(ctx);
 
-    if (!authUser) {
+    if (!user) {
       return failure('Not authenticated', ErrorCodes.UNAUTHORIZED);
     }
 
-    const towns = await ctx.db
+    const orgId = getOrganizationId(user);
+
+    let towns = await ctx.db
       .query('towns')
       .withIndex('by_locationId', (q) => q.eq('locationId', args.locationId!))
       .collect();
 
-    let filteredTowns = towns;
     if (args.search) {
-      filteredTowns = towns.filter((town) =>
+      towns = towns.filter((town) =>
         town.label.toLowerCase().includes(args.search!.toLowerCase()),
       );
     }
-    return success(filteredTowns);
+    if (orgId) {
+      towns = towns.filter((t) => t.organizationId === orgId);
+    }
+    return success(towns);
   },
 });
 
@@ -190,8 +215,11 @@ export const createTown = mutation({
     locationId: v.id('locations'),
   },
   handler: async (ctx, args) => {
-    await requireAdmin(ctx);
-    return ctx.db.insert('towns', args);
+    const user = await requireAdmin(ctx);
+    return ctx.db.insert('towns', {
+      ...args,
+      organizationId: getOrganizationId(user) ?? undefined,
+    });
   },
 });
 
@@ -221,17 +249,21 @@ export const listViolations = query({
     search: v.optional(v.string()),
   },
   handler: async (ctx, args): Promise<CustomResponse<Doc<'violations'>[]>> => {
-    const authUser = await authComponent.getAuthUser(ctx);
+    const user = await getAuthenticatedUser(ctx);
 
-    if (!authUser) {
+    if (!user) {
       return failure('Not authenticated', ErrorCodes.UNAUTHORIZED);
     }
-    const query = args.search
+    const orgId = getOrganizationId(user);
+    const q = args.search
       ? ctx.db
           .query('violations')
           .withSearchIndex('by_label', (q) => q.search('label', args.search!))
       : ctx.db.query('violations');
-    const results = await query.collect();
+    let results = await q.collect();
+    if (orgId) {
+      results = results.filter((r) => r.organizationId === orgId);
+    }
     return success(results);
   },
 });
@@ -239,8 +271,11 @@ export const listViolations = query({
 export const createViolation = mutation({
   args: { label: v.string(), number: v.number() },
   handler: async (ctx, args) => {
-    await requireAdmin(ctx);
-    return ctx.db.insert('violations', args);
+    const user = await requireAdmin(ctx);
+    return ctx.db.insert('violations', {
+      ...args,
+      organizationId: getOrganizationId(user) ?? undefined,
+    });
   },
 });
 
@@ -271,12 +306,13 @@ export const listLocationViolations = query({
     violationId: v.optional(v.id('violations')),
   },
   handler: async (ctx, args): Promise<CustomResponse<any>> => {
-    const authUser = await authComponent.getAuthUser(ctx);
+    const user = await getAuthenticatedUser(ctx);
 
-    if (!authUser) {
+    if (!user) {
       return failure('Not authenticated', ErrorCodes.UNAUTHORIZED);
     }
-    const query = args.locationId
+    const orgId = getOrganizationId(user);
+    const q = args.locationId
       ? ctx.db
           .query('locationViolations')
           .withIndex('by_locationId', (q) =>
@@ -290,9 +326,13 @@ export const listLocationViolations = query({
             )
         : ctx.db.query('locationViolations');
 
-    const locationViolations = await query.collect();
+    let locationViolations = await q.collect();
+    if (orgId) {
+      locationViolations = locationViolations.filter(
+        (lv) => lv.organizationId === orgId,
+      );
+    }
 
-    // Fetch violation details for each location violation
     const results = await Promise.all(
       locationViolations.map(async (lv) => {
         const violation = await ctx.db.get(lv.violationId);
@@ -311,9 +351,9 @@ export const listLocationViolations = query({
 export const getLocationViolation = query({
   args: { id: v.id('locationViolations') },
   handler: async (ctx, args): Promise<CustomResponse<any>> => {
-    const authUser = await authComponent.getAuthUser(ctx);
+    const user = await getAuthenticatedUser(ctx);
 
-    if (!authUser) {
+    if (!user) {
       return failure('Not authenticated', ErrorCodes.UNAUTHORIZED);
     }
     const locationViolation = await ctx.db.get(args.id);
@@ -339,8 +379,11 @@ export const createLocationViolation = mutation({
     violationId: v.id('violations'),
   },
   handler: async (ctx, args) => {
-    await requireAdmin(ctx);
-    return ctx.db.insert('locationViolations', args);
+    const user = await requireAdmin(ctx);
+    return ctx.db.insert('locationViolations', {
+      ...args,
+      organizationId: getOrganizationId(user) ?? undefined,
+    });
   },
 });
 

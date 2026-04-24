@@ -2,37 +2,46 @@
 import { paginationOptsValidator } from 'convex/server';
 import { v } from 'convex/values';
 
-import { type Id } from './_generated/dataModel';
+import { type Doc, type Id } from './_generated/dataModel';
 import { mutation, query } from './_generated/server';
 import { authComponent, createAuth } from './auth';
-import { AdminAuthError, getAuthenticatedUser, requireAdmin, requireAdminOrEmployee } from './auth/helpers';
+import {
+  AdminAuthError,
+  getAuthenticatedUser,
+  getOrganizationId,
+  requireAdmin,
+  requireAdminOrEmployee,
+  verifyOrgOwnership,
+} from './auth/helpers';
 import { type CustomResponse, ErrorCodes, failure, success } from './util';
 
 export const list = query({
   args: { query: v.optional(v.string()) },
   handler: async (ctx, args): Promise<CustomResponse<typeof pageWithUsers>> => {
-    const authUser = await authComponent.getAuthUser(ctx);
+    const user = await requireAdmin(ctx);
+    const orgId = getOrganizationId(user);
 
-    if (!authUser) {
-      return failure('Not authenticated', ErrorCodes.UNAUTHORIZED);
-    }
+    let parkings: Doc<'parkings'>[] = [];
 
-    let parkings = [];
-
-    if (!args.query) {
-      parkings = await ctx.db.query('parkings').order('desc').collect();
-    } else {
+    if (args.query) {
       parkings = await ctx.db
         .query('parkings')
         .withSearchIndex('by_name', (q) => q.search('name', args.query || ''))
         .collect();
+    } else if (orgId) {
+      parkings = await ctx.db
+        .query('parkings')
+        .withIndex('by_organizationId', (q) => q.eq('organizationId', orgId))
+        .order('desc')
+        .collect();
+    } else {
+      parkings = await ctx.db.query('parkings').order('desc').collect();
     }
 
     const pageWithUsers = (
       await Promise.all(
         parkings.map(async (parking) => {
           const user = await ctx.db.get(parking.userId);
-          // Filter out parkings with no user or disabled user
           if (!user || !user.enabled) {
             return null;
           }
@@ -73,7 +82,6 @@ export const getMyParking = query({
       .withIndex('by_userId', (q) => q.eq('userId', user?._id))
       .unique();
 
-    // Return null explicitly if no parking found
     if (!parking) {
       return success(null);
     }
@@ -103,9 +111,10 @@ export const create = mutation({
     imageStorageId: v.optional(v.id('_storage')),
   },
   handler: async (ctx, args) => {
-    await requireAdmin(ctx);
+    const user = await requireAdmin(ctx);
     await ctx.db.insert('parkings', {
       ...args,
+      organizationId: getOrganizationId(user) ?? undefined,
       unresolvedFelparkering: 0,
       unresolvedMakuleras: 0,
     });
@@ -132,7 +141,6 @@ export const deleteImage = mutation({
 export const updateParkingAndUser = mutation({
   args: {
     parkingId: v.id('parkings'),
-    // User fields
     email: v.string(),
     name: v.string(),
     phone: v.optional(v.string()),
@@ -141,7 +149,6 @@ export const updateParkingAndUser = mutation({
       v.literal('EMPLOYEE'),
       v.literal('CLIENT'),
     ),
-    // Parking fields
     parkingName: v.string(),
     description: v.string(),
     location: v.string(),
@@ -150,8 +157,9 @@ export const updateParkingAndUser = mutation({
     imageStorageId: v.optional(v.id('_storage')),
   },
   handler: async (ctx, args): Promise<CustomResponse<{ success: boolean }>> => {
+    let currentUser;
     try {
-      await requireAdmin(ctx);
+      currentUser = await requireAdmin(ctx);
     } catch (e) {
       if (e instanceof AdminAuthError) {
         return failure('Admin role required', ErrorCodes.FORBIDDEN);
@@ -173,13 +181,15 @@ export const updateParkingAndUser = mutation({
       imageStorageId,
     } = args;
 
-    // Get parking to find userId
     const parking = await ctx.db.get(parkingId);
     if (!parking) {
       return failure('Parking not found', ErrorCodes.NOT_FOUND);
     }
 
-    // Update user
+    if (!verifyOrgOwnership(currentUser, parking?.organizationId)) {
+      return failure('Not authorized', ErrorCodes.FORBIDDEN);
+    }
+
     await ctx.db.patch(parking.userId, {
       email,
       name,
@@ -187,7 +197,6 @@ export const updateParkingAndUser = mutation({
       role,
     });
 
-    // Update parking
     await ctx.db.patch(parkingId, {
       name: parkingName,
       description,
@@ -213,7 +222,14 @@ export const update = mutation({
     imageStorageId: v.optional(v.id('_storage')),
   },
   handler: async (ctx, { id, ...rest }) => {
-    await requireAdmin(ctx);
+    const user = await requireAdmin(ctx);
+    const parking = await ctx.db.get(id);
+    if (!parking) {
+      throw new Error('Parking not found');
+    }
+    if (!verifyOrgOwnership(user, parking?.organizationId)) {
+      throw new AdminAuthError();
+    }
     await ctx.db.patch(id, rest);
   },
 });
@@ -231,8 +247,9 @@ export const anonymizeParking = mutation({
       deletedReportsCount: number;
     }>
   > => {
+    let currentUser;
     try {
-      await requireAdmin(ctx);
+      currentUser = await requireAdmin(ctx);
     } catch (e) {
       if (e instanceof AdminAuthError) {
         return failure('Admin role required', ErrorCodes.FORBIDDEN);
@@ -245,9 +262,12 @@ export const anonymizeParking = mutation({
       return failure('Parking not found', ErrorCodes.NOT_FOUND);
     }
 
+    if (!verifyOrgOwnership(currentUser, parking?.organizationId)) {
+      return failure('Not authorized', ErrorCodes.FORBIDDEN);
+    }
+
     const parkingId = args.id;
 
-    // 3. Anonymize all associated vehicles
     const vehicles = await ctx.db
       .query('vehicles')
       .withIndex('by_parkingId', (q) => q.eq('parkingId', parkingId))
@@ -255,13 +275,11 @@ export const anonymizeParking = mutation({
 
     for (const vehicle of vehicles) {
       await ctx.db.patch(vehicle._id, {
-        // Replace the reference (e.g., license plate) with a generic ID
         reference: `ANON-${vehicle._id.substring(0, 8)}`,
         name: 'Anonymized Vehicle',
       });
     }
 
-    // 4. Delete associated reports/canceled violations
     const reports = await ctx.db
       .query('canceledViolations')
       .withIndex('by_parkingId', (q) => q.eq('parkingId', parkingId))
@@ -271,12 +289,10 @@ export const anonymizeParking = mutation({
       await ctx.db.delete(report._id);
     }
 
-    // 5. Handle File Storage (Delete the identifying image)
     if (parking.imageStorageId) {
       await ctx.storage.delete(parking.imageStorageId);
     }
 
-    // --- Anonymize the Parking Record ---
     await ctx.db.patch(parkingId, {
       name: `[Anonymized Parking ${parkingId.substring(0, 6)}]`,
       description: '',
@@ -286,7 +302,6 @@ export const anonymizeParking = mutation({
       imageStorageId: undefined,
       unresolvedMakuleras: 0,
       unresolvedFelparkering: 0,
-      // userId is kept for historical/statistical linkage.
     });
 
     return success({
@@ -301,7 +316,6 @@ export const anonymizeParking = mutation({
 
 export const createUserAndParking = mutation({
   args: {
-    // User details
     email: v.string(),
     password: v.string(),
     name: v.string(),
@@ -310,7 +324,6 @@ export const createUserAndParking = mutation({
       v.literal('EMPLOYEE'),
       v.literal('CLIENT'),
     ),
-    // Parking details
     parkingName: v.string(),
     parkingDescription: v.string(),
     parkingLocation: v.string(),
@@ -327,14 +340,17 @@ export const createUserAndParking = mutation({
       message: string;
     }>
   > => {
+    let currentUser;
     try {
-      await requireAdmin(ctx);
+      currentUser = await requireAdmin(ctx);
     } catch (e) {
       if (e instanceof AdminAuthError) {
         return failure('Admin role required', ErrorCodes.FORBIDDEN);
       }
       throw e;
     }
+
+    const orgId = getOrganizationId(currentUser);
 
     const session = await createAuth(ctx).api.signUpEmail({
       body: {
@@ -356,7 +372,7 @@ export const createUserAndParking = mutation({
       .withIndex('by_userId', (q) => q.eq('userId', session.user.id))
       .unique();
 
-    let userId = null;
+    let userId: Id<'users'> | null = null;
 
     if (!user) {
       userId = await ctx.db.insert('users', {
@@ -365,6 +381,7 @@ export const createUserAndParking = mutation({
         role: args.role,
         enabled: true,
         userId: session.user.id,
+        organizationId: orgId ?? undefined,
       });
     } else {
       userId = user._id;
@@ -378,6 +395,7 @@ export const createUserAndParking = mutation({
       address: args.parkingAddress,
       userId,
       imageStorageId: args.imageStorageId,
+      organizationId: orgId ?? undefined,
       unresolvedFelparkering: 0,
       unresolvedMakuleras: 0,
     });
@@ -427,7 +445,6 @@ export const getAvailabilityByDateRange = query({
         .collect();
     }
 
-    // Filter for overlapping availability
     return allAvailability.filter((availability) => {
       return (
         availability.startDate <= args.endDate &&
@@ -437,7 +454,6 @@ export const getAvailabilityByDateRange = query({
   },
 });
 
-// Public queries for regular users
 export const getUserParking = query({
   args: {},
   handler: async (ctx) => {
@@ -446,7 +462,6 @@ export const getUserParking = query({
       return null;
     }
 
-    // Find the user in our users table
     const userProfile = await ctx.db
       .query('users')
       .withIndex('by_email', (q) => q.eq('email', user.email!))
@@ -465,7 +480,6 @@ export const getUserParking = query({
       return null;
     }
 
-    // Get image URL if exists
     const imageUrl = parking.imageStorageId
       ? await ctx.storage.getUrl(parking.imageStorageId)
       : null;
@@ -483,10 +497,8 @@ export const getPublicParkingById = query({
       return null;
     }
 
-    // Get user info
     const user = await ctx.db.get(parking.userId);
 
-    // Get image URL if exists
     const imageUrl = parking.imageStorageId
       ? await ctx.storage.getUrl(parking.imageStorageId)
       : null;
@@ -531,8 +543,11 @@ export const createAvailability = mutation({
     description: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    await requireAdmin(ctx);
-    await ctx.db.insert('parkingAvailability', args);
+    const user = await requireAdmin(ctx);
+    await ctx.db.insert('parkingAvailability', {
+      ...args,
+      organizationId: getOrganizationId(user) ?? undefined,
+    });
     return { success: true };
   },
 });
@@ -640,7 +655,14 @@ export const updateParkingInfo = mutation({
 export const deleteParking = mutation({
   args: { id: v.id('parkings') },
   handler: async (ctx, args) => {
-    await requireAdmin(ctx);
+    const user = await requireAdmin(ctx);
+    const parking = await ctx.db.get(args.id);
+    if (!parking) {
+      throw new Error('Parking not found');
+    }
+    if (!verifyOrgOwnership(user, parking?.organizationId)) {
+      throw new AdminAuthError();
+    }
     await ctx.db.delete(args.id);
     return { success: true };
   },
@@ -649,15 +671,35 @@ export const deleteParking = mutation({
 export const deleteOrphanedParkings = mutation({
   args: {},
   handler: async (ctx) => {
-    await requireAdmin(ctx);
+    const user = await requireAdmin(ctx);
+    const orgId = getOrganizationId(user);
 
-    const allParkings = await ctx.db.query('parkings').collect();
+    let allParkings;
+    if (orgId) {
+      allParkings = await ctx.db
+        .query('parkings')
+        .withIndex('by_organizationId', (q) =>
+          q.eq('organizationId', orgId),
+        )
+        .collect();
+    } else {
+      allParkings = await ctx.db.query('parkings').collect();
+    }
 
-    // Get all user IDs
-    const allUsers = await ctx.db.query('users').collect();
+    let allUsers;
+    if (orgId) {
+      allUsers = await ctx.db
+        .query('users')
+        .withIndex('by_organizationId', (q) =>
+          q.eq('organizationId', orgId),
+        )
+        .collect();
+    } else {
+      allUsers = await ctx.db.query('users').collect();
+    }
+
     const userIds = new Set(allUsers.map((u) => u._id));
 
-    // Find and delete parkings with no valid user
     const orphanedParkings = allParkings.filter(
       (parking) => !userIds.has(parking.userId),
     );

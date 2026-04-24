@@ -41,7 +41,7 @@ export default function Layout({
 
   return (
     <>
-      {user.role === "ADMIN" ? dashboard : user.role === "CLIENT" ? client : children}
+      {user.role === "ADMIN" || user.role === "SUPER_ADMIN" || user.role === "EMPLOYEE" ? dashboard : user.role === "CLIENT" ? client : children}
     </>
   )
 }

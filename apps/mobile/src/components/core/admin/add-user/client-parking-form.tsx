@@ -26,7 +26,7 @@ const clientParkingFormSchema = z.object({
   website: z.string().url('Invalid website URL'),
   address: z.string().min(1, 'Address is required'),
   image: z.string().optional(),
-  role: z.enum(['ADMIN', 'EMPLOYEE', 'CLIENT']).default('CLIENT'),
+  role: z.enum(['ADMIN', 'EMPLOYEE', 'CLIENT', 'SUPER_ADMIN']).default('CLIENT'),
 });
 
 export type ClientParkingFormValues = z.infer<typeof clientParkingFormSchema>;

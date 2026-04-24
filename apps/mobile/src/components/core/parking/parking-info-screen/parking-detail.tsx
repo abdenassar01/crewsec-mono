@@ -27,7 +27,7 @@ interface ParkingDetailProps {
 export function ParkingDetail({ parkingId, onBack }: ParkingDetailProps) {
   const { t } = useTranslation();
   const { user } = useUser();
-  const canEdit = user?.role === 'ADMIN' || user?.role === 'EMPLOYEE';
+  const canEdit = user?.role === 'ADMIN' || user?.role === 'EMPLOYEE' || user?.role === 'SUPER_ADMIN';
 
   const parking = useSafeQuery(api.parkings.getParkingInfo, { parkingId });
   const updateParkingInfo = useSafeMutation(api.parkings.updateParkingInfo);

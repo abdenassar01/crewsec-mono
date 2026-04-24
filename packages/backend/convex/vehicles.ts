@@ -1,7 +1,13 @@
 import { v } from 'convex/values';
 
-import { mutation, query } from './_generated/server';
-import { getAuthenticatedUser, requireAdmin } from './auth/helpers';
+import { query } from './_generated/server';
+import { mutation } from './_generated/server';
+import type { Id } from './_generated/dataModel';
+import {
+  getAuthenticatedUser,
+  getOrganizationId,
+  requireAdmin,
+} from './auth/helpers';
 import { type CustomResponse, ErrorCodes, failure, success } from './util';
 
 export const insertBatch = mutation({
@@ -17,11 +23,10 @@ export const insertBatch = mutation({
     ),
   },
   handler: async (ctx, args) => {
-    await requireAdmin(ctx);
-    const results = [];
+    const user = await requireAdmin(ctx);
+    const results: Array<{ skipped?: boolean; success?: boolean; id?: Id<'vehicles'>; reference: string; error?: string }> = [];
     for (const vehicle of args.vehicles) {
       try {
-        // Skip if already exists
         const existing = await ctx.db
           .query('vehicles')
           .withIndex('by_reference', (q) =>
@@ -35,7 +40,10 @@ export const insertBatch = mutation({
           continue;
         }
 
-        const id = await ctx.db.insert('vehicles', vehicle);
+        const id = await ctx.db.insert('vehicles', {
+          ...vehicle,
+          organizationId: getOrganizationId(user) ?? undefined,
+        });
         results.push({ success: true, id, reference: vehicle.reference });
       } catch (error) {
         results.push({ error: String(error), reference: vehicle.reference });
@@ -48,8 +56,21 @@ export const insertBatch = mutation({
 export const list = query({
   args: {},
   handler: async (ctx) => {
-    await requireAdmin(ctx);
-    const vehicles = await ctx.db.query('vehicles').order('desc').collect();
+    const user = await requireAdmin(ctx);
+    const orgId = getOrganizationId(user);
+
+    let vehicles;
+    if (orgId) {
+      vehicles = await ctx.db
+        .query('vehicles')
+        .withIndex('by_organizationId', (q) =>
+          q.eq('organizationId', orgId),
+        )
+        .order('desc')
+        .collect();
+    } else {
+      vehicles = await ctx.db.query('vehicles').order('desc').collect();
+    }
 
     const pageWithParking = await Promise.all(
       vehicles.map(async (vehicle) => {
@@ -77,11 +98,22 @@ export const search = query({
       return [];
     }
 
+    const orgId = getOrganizationId(user);
+
     if (args.query === '') {
       if (args.parkingId) {
         return ctx.db
           .query('vehicles')
           .withIndex('by_parkingId', (q) => q.eq('parkingId', args.parkingId!))
+          .filter((q) => q.gte(q.field('leaveDate'), now))
+          .collect();
+      }
+      if (orgId) {
+        return ctx.db
+          .query('vehicles')
+          .withIndex('by_organizationId', (q) =>
+            q.eq('organizationId', orgId),
+          )
           .filter((q) => q.gte(q.field('leaveDate'), now))
           .collect();
       }
@@ -115,9 +147,21 @@ export const searchWithDetails = query({
       return { page: [], continueCursor: null, isDone: true };
     }
 
+    const orgId = getOrganizationId(user);
+
     let vehicles;
     if (args.query === '') {
-      vehicles = await ctx.db.query('vehicles').order('desc').take(20);
+      if (orgId) {
+        vehicles = await ctx.db
+          .query('vehicles')
+          .withIndex('by_organizationId', (q) =>
+            q.eq('organizationId', orgId),
+          )
+          .order('desc')
+          .take(20);
+      } else {
+        vehicles = await ctx.db.query('vehicles').order('desc').take(20);
+      }
     } else {
       vehicles = await ctx.db
         .query('vehicles')
@@ -161,8 +205,11 @@ export const create = mutation({
     parkingId: v.id('parkings'),
   },
   handler: async (ctx, args) => {
-    await requireAdmin(ctx);
-    await ctx.db.insert('vehicles', args);
+    const user = await requireAdmin(ctx);
+    await ctx.db.insert('vehicles', {
+      ...args,
+      organizationId: getOrganizationId(user) ?? undefined,
+    });
   },
 });
 
@@ -200,15 +247,24 @@ export const deleteVehicle = mutation({
 export const deleteOrphanedVehicles = mutation({
   args: {},
   handler: async (ctx) => {
-    await requireAdmin(ctx);
-    // Get all vehicles
-    const allVehicles = await ctx.db.query('vehicles').collect();
+    const user = await requireAdmin(ctx);
+    const orgId = getOrganizationId(user);
 
-    // Get all parking IDs
+    let allVehicles;
+    if (orgId) {
+      allVehicles = await ctx.db
+        .query('vehicles')
+        .withIndex('by_organizationId', (q) =>
+          q.eq('organizationId', orgId),
+        )
+        .collect();
+    } else {
+      allVehicles = await ctx.db.query('vehicles').collect();
+    }
+
     const allParkings = await ctx.db.query('parkings').collect();
     const parkingIds = new Set(allParkings.map((p) => p._id));
 
-    // Find and delete vehicles with no valid parking
     const orphanedVehicles = allVehicles.filter(
       (vehicle) => !parkingIds.has(vehicle.parkingId),
     );
@@ -285,7 +341,6 @@ export const getMyVehicleById = query({
       return failure('Not authenticated', ErrorCodes.UNAUTHORIZED);
     }
 
-    // Find the user in our users table
     const userProfile = await ctx.db
       .query('users')
       .withIndex('by_email', (q) => q.eq('email', user.email!))
@@ -295,7 +350,6 @@ export const getMyVehicleById = query({
       return failure('User profile not found', ErrorCodes.NOT_FOUND);
     }
 
-    // Find user's parking
     const parking = await ctx.db
       .query('parkings')
       .withIndex('by_userId', (q) => q.eq('userId', userProfile._id))
@@ -307,7 +361,6 @@ export const getMyVehicleById = query({
 
     const vehicle = await ctx.db.get(args.id);
 
-    // Ensure the vehicle belongs to the user's parking
     if (!vehicle || vehicle.parkingId !== parking._id) {
       return failure(
         'Vehicle not found or access denied',
@@ -335,7 +388,6 @@ export const createMyVehicle = mutation({
       return failure('Not authenticated', ErrorCodes.UNAUTHORIZED);
     }
 
-    // Find the user in our users table
     const userProfile = await ctx.db
       .query('users')
       .withIndex('by_email', (q) => q.eq('email', user.email!))
@@ -345,7 +397,6 @@ export const createMyVehicle = mutation({
       return failure('User profile not found', ErrorCodes.NOT_FOUND);
     }
 
-    // Find user's parking
     const parking = await ctx.db
       .query('parkings')
       .withIndex('by_userId', (q) => q.eq('userId', userProfile._id))
@@ -358,6 +409,7 @@ export const createMyVehicle = mutation({
     const vehicleId = await ctx.db.insert('vehicles', {
       ...args,
       parkingId: parking._id,
+      organizationId: parking.organizationId ?? undefined,
     });
 
     return success({ vehicleId });
@@ -381,7 +433,6 @@ export const updateMyVehicle = mutation({
       return failure('Not authenticated', ErrorCodes.UNAUTHORIZED);
     }
 
-    // Find the user in our users table
     const userProfile = await ctx.db
       .query('users')
       .withIndex('by_email', (q) => q.eq('email', user.email!))
@@ -391,7 +442,6 @@ export const updateMyVehicle = mutation({
       return failure('User profile not found', ErrorCodes.NOT_FOUND);
     }
 
-    // Find user's parking
     const parking = await ctx.db
       .query('parkings')
       .withIndex('by_userId', (q) => q.eq('userId', userProfile._id))
@@ -403,7 +453,6 @@ export const updateMyVehicle = mutation({
 
     const vehicle = await ctx.db.get(id);
 
-    // Ensure the vehicle belongs to the user's parking
     if (!vehicle || vehicle.parkingId !== parking._id) {
       return failure(
         'Vehicle not found or access denied',
@@ -424,7 +473,6 @@ export const deleteMyVehicle = mutation({
       return failure('Not authenticated', ErrorCodes.UNAUTHORIZED);
     }
 
-    // Find the user in our users table
     const userProfile = await ctx.db
       .query('users')
       .withIndex('by_email', (q) => q.eq('email', user.email!))
@@ -434,7 +482,6 @@ export const deleteMyVehicle = mutation({
       return failure('User profile not found', ErrorCodes.NOT_FOUND);
     }
 
-    // Find user's parking
     const parking = await ctx.db
       .query('parkings')
       .withIndex('by_userId', (q) => q.eq('userId', userProfile._id))
@@ -446,7 +493,6 @@ export const deleteMyVehicle = mutation({
 
     const vehicle = await ctx.db.get(args.id);
 
-    // Ensure the vehicle belongs to the user's parking
     if (!vehicle || vehicle.parkingId !== parking._id) {
       return failure(
         'Vehicle not found or access denied',
