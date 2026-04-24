@@ -1,21 +1,39 @@
 import { v } from 'convex/values';
 
 import { mutation, query } from './_generated/server';
-import { requireSuperAdmin } from './auth/helpers';
+import {
+  getOrganizationId,
+  requireAdmin,
+  requireSuperAdmin,
+  verifyOrgOwnership,
+} from './auth/helpers';
 import { type CustomResponse, ErrorCodes, failure, success } from './util';
 
 export const list = query({
   args: {},
   handler: async (ctx) => {
-    await requireSuperAdmin(ctx);
-    return await ctx.db.query('organizations').order('desc').collect();
+    const user = await requireAdmin(ctx);
+
+    if (user.role === 'SUPER_ADMIN') {
+      return await ctx.db.query('organizations').order('desc').collect();
+    }
+
+    const orgId = getOrganizationId(user);
+    if (!orgId) return [];
+
+    const org = await ctx.db.get(orgId);
+    return org ? [org] : [];
   },
 });
 
 export const getById = query({
   args: { id: v.id('organizations') },
   handler: async (ctx, args): Promise<CustomResponse<any>> => {
-    await requireSuperAdmin(ctx);
+    const user = await requireAdmin(ctx);
+
+    if (!verifyOrgOwnership(user, args.id)) {
+      return failure('Not authorized to access this organization', ErrorCodes.FORBIDDEN);
+    }
 
     const org = await ctx.db.get(args.id);
     if (!org) {
@@ -54,10 +72,60 @@ export const getById = query({
   },
 });
 
+export const getMyOrg = query({
+  args: {},
+  handler: async (ctx): Promise<CustomResponse<any>> => {
+    const user = await requireAdmin(ctx);
+    const orgId = getOrganizationId(user);
+    if (!orgId) {
+      return failure('No organization associated with this account', ErrorCodes.NOT_FOUND);
+    }
+
+    const org = await ctx.db.get(orgId);
+    if (!org) {
+      return failure('Organization not found', ErrorCodes.NOT_FOUND);
+    }
+
+    const users = await ctx.db
+      .query('users')
+      .withIndex('by_organizationId', (q) =>
+        q.eq('organizationId', orgId),
+      )
+      .collect();
+
+    const parkings = await ctx.db
+      .query('parkings')
+      .withIndex('by_organizationId', (q) =>
+        q.eq('organizationId', orgId),
+      )
+      .collect();
+
+    let logoUrl = '';
+    if (org.logoStorageId) {
+      try {
+        logoUrl = (await ctx.storage.getUrl(org.logoStorageId)) || '';
+      } catch {
+        logoUrl = '';
+      }
+    }
+
+    return success({
+      ...org,
+      logoUrl,
+      userCount: users.filter((u) => u.enabled).length,
+      parkingCount: parkings.length,
+    });
+  },
+});
+
 export const getOrgStats = query({
   args: { id: v.id('organizations') },
   handler: async (ctx, args): Promise<CustomResponse<any>> => {
-    await requireSuperAdmin(ctx);
+    const user = await requireAdmin(ctx);
+
+    if (!verifyOrgOwnership(user, args.id)) {
+      return failure('Not authorized', ErrorCodes.FORBIDDEN);
+    }
 
     const org = await ctx.db.get(args.id);
     if (!org) {
@@ -159,12 +227,20 @@ export const update = mutation({
     ),
   },
   handler: async (ctx, args): Promise<CustomResponse<{ success: boolean }>> => {
-    await requireSuperAdmin(ctx);
+    const user = await requireAdmin(ctx);
+
+    if (!verifyOrgOwnership(user, args.id)) {
+      return failure('Not authorized to update this organization', ErrorCodes.FORBIDDEN);
+    }
 
     const { id, ...rest } = args;
     const org = await ctx.db.get(id);
     if (!org) {
       return failure('Organization not found', ErrorCodes.NOT_FOUND);
+    }
+
+    if (user.role !== 'SUPER_ADMIN') {
+      delete rest.subscriptionStatus;
     }
 
     await ctx.db.patch(id, rest);
@@ -202,7 +278,7 @@ export const remove = mutation({
 
 export const getUploadUrl = mutation({
   handler: async (ctx) => {
-    await requireSuperAdmin(ctx);
+    await requireAdmin(ctx);
     return await ctx.storage.generateUploadUrl();
   },
 });

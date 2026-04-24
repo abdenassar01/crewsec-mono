@@ -20,6 +20,9 @@ export default function OrganizationListPage() {
   const [deleteTarget, setDeleteTarget] = React.useState<Doc<"organizations"> | null>(null);
   const [statsTarget, setStatsTarget] = React.useState<Doc<"organizations"> | null>(null);
 
+  const currentUser = useSafeQuery(api.users.getCurrentUserProfile);
+  const isSuperAdmin = (currentUser as any)?.role === "SUPER_ADMIN";
+
   const organizations = useSafeQuery(api.organizations.list);
   const isLoading = organizations === undefined;
   const stats = useSafeQuery(
@@ -33,6 +36,7 @@ export default function OrganizationListPage() {
   const getUploadUrl = useSafeMutation(api.organizations.getUploadUrl);
 
   const handleDelete = (orgId: Doc<"organizations">["_id"]) => {
+    if (!isSuperAdmin) return;
     const org = (organizations as any[])?.find((o: any) => o._id === orgId);
     setDeleteTarget(org ?? null);
   };
@@ -56,10 +60,10 @@ export default function OrganizationListPage() {
         (org) => {
           setStatsTarget(org);
         },
-        handleDelete
+        isSuperAdmin ? handleDelete : () => {},
       ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
+    [isSuperAdmin]
   );
 
   const handleFormSubmit = async (data: any, isEdit: boolean) => {
@@ -97,7 +101,7 @@ export default function OrganizationListPage() {
         phone: data.phone,
         address: data.address,
         website: data.website,
-        subscriptionStatus: data.subscriptionStatus,
+        subscriptionStatus: isSuperAdmin ? data.subscriptionStatus : undefined,
         logoStorageId: logoStorageId || editingOrg.logoStorageId,
       });
       if (result !== null) {
@@ -106,6 +110,7 @@ export default function OrganizationListPage() {
         setEditingOrg(null);
       }
     } else {
+      if (!isSuperAdmin) return;
       const result = await createOrg({
         name: data.name,
         description: data.description,
@@ -137,27 +142,54 @@ export default function OrganizationListPage() {
     <div className="space-y-4 mt-10">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Organization Management</h1>
-        <Dialog
-          open={isDialogOpen}
-          onOpenChange={(open) => {
-            setIsDialogOpen(open);
-            if (!open) setEditingOrg(null);
-          }}
-        >
-          <DialogTrigger asChild>
-            <Button>Add New Organization</Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[80svh] overflow-y-scroll">
-            <DialogHeader>
-              <DialogTitle>{editingOrg ? "Edit Organization" : "Create New Organization"}</DialogTitle>
-            </DialogHeader>
-            <OrganizationForm
-              onSubmit={handleFormSubmit}
-              defaultValues={editingOrg ?? undefined}
-              isPending={false}
-            />
-          </DialogContent>
-        </Dialog>
+        {isSuperAdmin && (
+          <Dialog
+            open={isDialogOpen}
+            onOpenChange={(open) => {
+              setIsDialogOpen(open);
+              if (!open) setEditingOrg(null);
+            }}
+          >
+            <DialogTrigger asChild>
+              <Button>Add New Organization</Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[80svh] overflow-y-scroll">
+              <DialogHeader>
+                <DialogTitle>{editingOrg ? "Edit Organization" : "Create New Organization"}</DialogTitle>
+              </DialogHeader>
+              <OrganizationForm
+                onSubmit={handleFormSubmit}
+                defaultValues={editingOrg ?? undefined}
+                isPending={false}
+                isSuperAdmin={isSuperAdmin}
+              />
+            </DialogContent>
+          </Dialog>
+        )}
+        {!isSuperAdmin && (
+          <Dialog
+            open={isDialogOpen}
+            onOpenChange={(open) => {
+              setIsDialogOpen(open);
+              if (!open) setEditingOrg(null);
+            }}
+          >
+            <DialogTrigger asChild>
+              <Button>Edit Organization</Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[80svh] overflow-y-scroll">
+              <DialogHeader>
+                <DialogTitle>Edit Organization</DialogTitle>
+              </DialogHeader>
+              <OrganizationForm
+                onSubmit={handleFormSubmit}
+                defaultValues={editingOrg ?? orgs[0] ?? undefined}
+                isPending={false}
+                isSuperAdmin={false}
+              />
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
 
       <DataTable

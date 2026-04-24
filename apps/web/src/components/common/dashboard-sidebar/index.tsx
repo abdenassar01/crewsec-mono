@@ -39,7 +39,7 @@ export  function DashboardSidebar() {
 
   return (
     <>
-      {user?.role === 'SUPER_ADMIN' && (
+      {(user?.role === 'SUPER_ADMIN' || user?.role === 'ADMIN') && (
         <>
           {superAdminLinks.map((link) => (
             <SidebarLink key={link.href} {...link} />

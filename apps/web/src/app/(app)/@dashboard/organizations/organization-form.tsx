@@ -15,6 +15,7 @@ type OrganizationFormProps = {
   onSubmit: (data: any, isEdit: boolean) => void;
   defaultValues?: Partial<Doc<"organizations"> & { logoUrl?: string }> | null;
   isPending: boolean;
+  isSuperAdmin?: boolean;
 };
 
 const orgSchema = z.object({
@@ -27,7 +28,7 @@ const orgSchema = z.object({
   subscriptionStatus: z.enum(["ACTIVE", "INACTIVE", "TRIAL"]).optional(),
 });
 
-export function OrganizationForm({ onSubmit, defaultValues, isPending }: OrganizationFormProps) {
+export function OrganizationForm({ onSubmit, defaultValues, isPending, isSuperAdmin = false }: OrganizationFormProps) {
   const isEditMode = !!defaultValues?._id;
 
   const orgDetails = useSafeQuery(
@@ -148,6 +149,7 @@ export function OrganizationForm({ onSubmit, defaultValues, isPending }: Organiz
           </div>
         )}
       />
+      {isSuperAdmin && (
       <form.Field
         name="subscriptionStatus"
         validators={{
@@ -172,6 +174,7 @@ export function OrganizationForm({ onSubmit, defaultValues, isPending }: Organiz
           </div>
         )}
       />
+      )}
       <Button type="submit" disabled={isPending}>
         {isPending ? "Saving..." : "Save Organization"}
       </Button>
