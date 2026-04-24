@@ -1,11 +1,13 @@
 import { paginationOptsValidator } from 'convex/server';
 import { v } from 'convex/values';
 
+import type { Doc } from './_generated/dataModel';
 import { mutation, query } from './_generated/server';
 import {
   requireAdminOrEmployee,
   getAuthenticatedUser,
   getOrganizationId,
+  requireOrgAccess,
 } from './auth/helpers';
 
 const controlFeeStatus = v.union(
@@ -18,27 +20,21 @@ const controlFeeStatus = v.union(
 export const get = query({
   args: { id: v.id('controlFees') },
   handler: async (ctx, args) => {
-    await requireAdminOrEmployee(ctx);
+    const user = await requireAdminOrEmployee(ctx);
     const fee = await ctx.db.get(args.id);
     if (!fee) return null;
+    requireOrgAccess(user, fee.organizationId);
 
     const town = await ctx.db.get(fee.townId);
     const locationViolation = await ctx.db.get(fee.locationViolationId);
-    let violation = null;
-    let location = null;
+    const violation = locationViolation
+      ? await ctx.db.get(locationViolation.violationId)
+      : null;
+    const location = locationViolation
+      ? await ctx.db.get(locationViolation.locationId)
+      : null;
 
-    if (locationViolation) {
-      violation = await ctx.db.get(locationViolation.violationId);
-      location = await ctx.db.get(locationViolation.locationId);
-    }
-
-    return {
-      ...fee,
-      town,
-      locationViolation,
-      violation,
-      location,
-    };
+    return { ...fee, town, locationViolation, violation, location };
   },
 });
 
@@ -52,12 +48,12 @@ export const list = query({
     const user = await requireAdminOrEmployee(ctx);
     const orgId = getOrganizationId(user);
 
-    let fees: any;
+    let fees: Doc<'controlFees'>[];
 
     if (args.townId) {
       fees = await ctx.db
         .query('controlFees')
-        .withIndex('by_townId', (q: any) => q.eq('townId', args.townId))
+        .withIndex('by_townId', (q) => q.eq('townId', args.townId!))
         .order('desc')
         .collect();
     } else {
@@ -65,18 +61,18 @@ export const list = query({
     }
 
     if (orgId) {
-      fees = fees.filter((fee: any) => fee.organizationId === orgId);
+      fees = fees.filter((fee) => fee.organizationId === orgId);
     }
 
     if (args.violationId) {
       const locationViolations = await ctx.db
         .query('locationViolations')
-        .withIndex('by_violationId', (q: any) =>
+        .withIndex('by_violationId', (q) =>
           q.eq('violationId', args.violationId!),
         )
         .collect();
-      const lvIds = locationViolations.map((lv: any) => lv._id);
-      fees = fees.filter((fee: any) => lvIds.includes(fee.locationViolationId));
+      const lvIds = new Set(locationViolations.map((lv) => lv._id));
+      fees = fees.filter((fee) => lvIds.has(fee.locationViolationId));
     }
 
     const start = args.paginationOpts.cursor
@@ -178,7 +174,9 @@ export const update = mutation({
     galleryStorageIds: v.array(v.id('_storage')),
   },
   handler: async (ctx, { id, ...rest }) => {
-    await requireAdminOrEmployee(ctx);
+    const user = await requireAdminOrEmployee(ctx);
+    const fee = await ctx.db.get(id);
+    if (fee) requireOrgAccess(user, fee.organizationId);
     await ctx.db.patch(id, rest);
   },
 });
@@ -189,7 +187,9 @@ export const updateStatus = mutation({
     status: controlFeeStatus,
   },
   handler: async (ctx, args) => {
-    await requireAdminOrEmployee(ctx);
+    const user = await requireAdminOrEmployee(ctx);
+    const fee = await ctx.db.get(args.id);
+    if (fee) requireOrgAccess(user, fee.organizationId);
     await ctx.db.patch(args.id, { status: args.status });
   },
 });
@@ -197,12 +197,15 @@ export const updateStatus = mutation({
 export const deleteFee = mutation({
   args: { id: v.id('controlFees') },
   handler: async (ctx, args) => {
-    await requireAdminOrEmployee(ctx);
+    const user = await requireAdminOrEmployee(ctx);
     const fee = await ctx.db.get(args.id);
-    if (fee && fee.galleryStorageIds) {
-      await Promise.all(
-        fee.galleryStorageIds.map((id) => ctx.storage.delete(id)),
-      );
+    if (fee) {
+      requireOrgAccess(user, fee.organizationId);
+      if (fee.galleryStorageIds) {
+        await Promise.all(
+          fee.galleryStorageIds.map((id) => ctx.storage.delete(id)),
+        );
+      }
     }
     await ctx.db.delete(args.id);
   },
@@ -211,9 +214,10 @@ export const deleteFee = mutation({
 export const getById = query({
   args: { id: v.id('controlFees') },
   handler: async (ctx, args) => {
-    await requireAdminOrEmployee(ctx);
+    const user = await requireAdminOrEmployee(ctx);
     const fee = await ctx.db.get(args.id);
     if (!fee) return null;
+    requireOrgAccess(user, fee.organizationId);
 
     const town = await ctx.db.get(fee.townId);
     const locationViolation = await ctx.db.get(fee.locationViolationId);
@@ -277,7 +281,7 @@ export const listWithDetails = query({
     const user = await requireAdminOrEmployee(ctx);
     const orgId = getOrganizationId(user);
 
-    let fees: any;
+    let fees: Doc<'controlFees'>[];
 
     if (args.townId) {
       fees = await ctx.db
@@ -290,7 +294,7 @@ export const listWithDetails = query({
     }
 
     if (orgId) {
-      fees = fees.filter((fee: any) => fee.organizationId === orgId);
+      fees = fees.filter((fee) => fee.organizationId === orgId);
     }
 
     const start = args.paginationOpts.cursor
@@ -302,13 +306,13 @@ export const listWithDetails = query({
     const isDone = end >= fees.length;
 
     const feesWithDetails = await Promise.all(
-      paginatedFees.map(async (fee: any) => {
+      paginatedFees.map(async (fee) => {
         const locationViolation = await ctx.db.get(fee.locationViolationId);
 
         return {
           ...fee,
           violation: {
-            price: locationViolation?.price ?? 0,
+            price: (locationViolation as Doc<'locationViolations'> | null)?.price ?? 0,
           },
         };
       }),

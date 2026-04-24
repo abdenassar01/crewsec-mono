@@ -51,6 +51,8 @@
     "complaint-type": "Välj klagomålstyp",
     "dates": "Datum",
     "description": "Beskrivning",
+    "max-capacity": "Maxkapacitet (valfritt)",
+    "max-capacity-placeholder": "Lämna tomt för obegränsat",
     "email": "E-post",
     "role": "Roll",
     "select-role": "Välj roll",

@@ -38,6 +38,7 @@ export default function UpdateAdminUser() {
         phone: formData.phone,
         role: formData.role || data?.role,
         enabled: formData.enabled,
+        organizationId: formData.organizationId || undefined,
       });
 
       // Success - navigate back

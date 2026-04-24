@@ -72,6 +72,7 @@ export default function AddUser() {
         parkingLocation: data.location,
         parkingWebsite: data.website,
         parkingAddress: data.address,
+        maxCapacity: data.maxCapacity ? parseInt(data.maxCapacity, 10) : undefined,
         imageStorageId: data.image || undefined,
       });
 

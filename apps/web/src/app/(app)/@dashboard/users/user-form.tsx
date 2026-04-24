@@ -5,7 +5,9 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { Doc } from "@convex/_generated/dataModel";
+import type { Doc, Id } from "@convex/_generated/dataModel";
+import { useSafeQuery } from "@/lib/hooks";
+import { api } from "@convex/_generated/api";
 
 type UserFormProps = {
   onSubmit: (data: any, isEdit: boolean) => void;
@@ -19,10 +21,16 @@ const userSchema = z.object({
   role: z.enum(["CLIENT", "EMPLOYEE", "ADMIN"]),
   enabled: z.boolean().optional(),
   password: z.string().optional(),
+  organizationId: z.string().optional(),
 });
 
 export function UserForm({ onSubmit, defaultValues, isPending }: UserFormProps) {
   const isEditMode = !!defaultValues?._id;
+
+  const currentUser = useSafeQuery(api.users.getCurrentUserProfile);
+  const organizations = useSafeQuery(api.organizations.list);
+  const isSuperAdmin = (currentUser as any)?.role === "SUPER_ADMIN";
+  const orgList = (organizations as any[]) ?? [];
 
   const form = useForm({
     defaultValues: {
@@ -31,11 +39,11 @@ export function UserForm({ onSubmit, defaultValues, isPending }: UserFormProps) 
       role: defaultValues?.role ?? "CLIENT",
       enabled: defaultValues?.enabled ?? true,
       password: "",
+      organizationId: (defaultValues as any)?.organizationId ?? "",
     },
     onSubmit: async ({ value }) => {
       await onSubmit(value, isEditMode);
     },
-    // defaultValidators: zodValidator(userSchema),
   });
 
   return (
@@ -97,6 +105,29 @@ export function UserForm({ onSubmit, defaultValues, isPending }: UserFormProps) 
           </div>
         )}
       />
+      {isSuperAdmin && orgList.length > 0 && (
+        <form.Field
+          name="organizationId"
+          children={(field) => (
+            <div>
+              <Label htmlFor={field.name}>Organization</Label>
+              <select
+                id={field.name}
+                onChange={(e) => field.handleChange(e.target.value as any)}
+                value={field.state.value}
+                className="w-full p-2 border border-gray-300 rounded-md"
+              >
+                <option value="">No Organization</option>
+                {orgList.map((org: any) => (
+                  <option key={org._id} value={org._id}>
+                    {org.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+        />
+      )}
       <form.Field
         name="enabled"
         children={(field) => (

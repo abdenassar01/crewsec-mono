@@ -11,8 +11,11 @@ import {
   ActivityIndicator,
   Button,
   ControlledInput,
+  ControlledSelect,
   Text,
 } from '@/components/ui';
+import { api } from 'convex/_generated/api';
+import { useSafeQuery } from '@/hooks/use-convex-hooks';
 
 const simpleUserFormSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -21,6 +24,7 @@ const simpleUserFormSchema = z.object({
   phone: z.string().optional(),
   role: z.enum(['ADMIN', 'EMPLOYEE', 'SUPER_ADMIN']),
   avatar: z.string().optional(),
+  organizationId: z.string().optional(),
 });
 
 export type SimpleUserFormValues = z.infer<typeof simpleUserFormSchema>;
@@ -40,6 +44,16 @@ export function SimpleUserForm({
 }: Props) {
   const { height: _height } = useWindowDimensions();
 
+  const currentUser = useSafeQuery(api.users.getCurrentUserProfile);
+  const organizations = useSafeQuery(api.organizations.list);
+  const isSuperAdmin = (currentUser as any)?.role === 'SUPER_ADMIN';
+  const orgList = (organizations as any[]) ?? [];
+
+  const orgOptions = orgList.map((org: any) => ({
+    label: org.name,
+    value: org._id,
+  }));
+
   const { control, handleSubmit } = useForm<SimpleUserFormValues>({
     resolver: zodResolver(simpleUserFormSchema),
     defaultValues: {
@@ -49,6 +63,7 @@ export function SimpleUserForm({
       phone: '',
       role: selectedRole,
       avatar: undefined,
+      organizationId: '',
     },
   });
 
@@ -118,6 +133,16 @@ export function SimpleUserForm({
             name="phone"
             keyboardType="phone-pad"
           />
+
+          {isSuperAdmin && orgOptions.length > 0 && (
+            <ControlledSelect
+              label="Organization"
+              control={control}
+              name="organizationId"
+              options={orgOptions}
+              placeholder="Select organization"
+            />
+          )}
         </View>
       </ScrollView>
       <View className="flex-row justify-between gap-[2%] px-4">

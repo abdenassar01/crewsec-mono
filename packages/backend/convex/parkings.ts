@@ -11,13 +11,15 @@ import {
   getOrganizationId,
   requireAdmin,
   requireAdminOrEmployee,
+  requireOrgAccess,
   verifyOrgOwnership,
+  withAdminCheck,
 } from './auth/helpers';
 import { type CustomResponse, ErrorCodes, failure, success } from './util';
 
 export const list = query({
   args: { query: v.optional(v.string()) },
-  handler: async (ctx, args): Promise<CustomResponse<typeof pageWithUsers>> => {
+  handler: async (ctx, args) => {
     const user = await requireAdmin(ctx);
     const orgId = getOrganizationId(user);
 
@@ -28,6 +30,9 @@ export const list = query({
         .query('parkings')
         .withSearchIndex('by_name', (q) => q.search('name', args.query || ''))
         .collect();
+      if (orgId) {
+        parkings = parkings.filter((p) => p.organizationId === orgId);
+      }
     } else if (orgId) {
       parkings = await ctx.db
         .query('parkings')
@@ -41,17 +46,15 @@ export const list = query({
     const pageWithUsers = (
       await Promise.all(
         parkings.map(async (parking) => {
-          const user = await ctx.db.get(parking.userId);
-          if (!user || !user.enabled) {
-            return null;
-          }
+          const parkingUser = await ctx.db.get(parking.userId);
+          if (!parkingUser || !parkingUser.enabled) return null;
           const imageUrl = parking.imageStorageId
             ? await ctx.storage.getUrl(parking.imageStorageId)
             : null;
-          return { ...parking, user, imageUrl };
+          return { ...parking, user: parkingUser, imageUrl };
         }),
       )
-    ).filter((p) => p !== null);
+    ).filter((p): p is NonNullable<typeof p> => p !== null);
 
     return success(pageWithUsers);
   },
@@ -72,29 +75,18 @@ export const getMyParking = query({
   args: {},
   handler: async (ctx): Promise<CustomResponse<any>> => {
     const user = await getAuthenticatedUser(ctx);
-
-    if (!user) {
-      return failure('Unauthenticated', ErrorCodes.UNAUTHORIZED);
-    }
+    if (!user) return failure('Unauthenticated', ErrorCodes.UNAUTHORIZED);
 
     const parking = await ctx.db
       .query('parkings')
-      .withIndex('by_userId', (q) => q.eq('userId', user?._id))
+      .withIndex('by_userId', (q) => q.eq('userId', user._id))
       .unique();
 
-    if (!parking) {
-      return success(null);
-    }
+    if (!parking) return success(null);
 
-    let imageUrl = '';
-    if (parking?.imageStorageId) {
-      try {
-        imageUrl = (await ctx.storage.getUrl(parking.imageStorageId)) || '';
-      } catch (error) {
-        console.error('Failed to get parking image URL:', error);
-        imageUrl = '';
-      }
-    }
+    const imageUrl = parking.imageStorageId
+      ? (await ctx.storage.getUrl(parking.imageStorageId)) || ''
+      : '';
 
     return success({ parking: { ...parking, imageUrl }, user });
   },
@@ -109,6 +101,7 @@ export const create = mutation({
     address: v.string(),
     userId: v.id('users'),
     imageStorageId: v.optional(v.id('_storage')),
+    maxCapacity: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const user = await requireAdmin(ctx);
@@ -155,58 +148,58 @@ export const updateParkingAndUser = mutation({
     website: v.string(),
     address: v.string(),
     imageStorageId: v.optional(v.id('_storage')),
+    maxCapacity: v.optional(v.number()),
   },
   handler: async (ctx, args): Promise<CustomResponse<{ success: boolean }>> => {
-    let currentUser;
-    try {
-      currentUser = await requireAdmin(ctx);
-    } catch (e) {
-      if (e instanceof AdminAuthError) {
-        return failure('Admin role required', ErrorCodes.FORBIDDEN);
+    return withAdminCheck(ctx, async (currentUser) => {
+      const {
+        parkingId,
+        email,
+        name,
+        phone,
+        role,
+        parkingName,
+        description,
+        location,
+        website,
+        address,
+        imageStorageId,
+        maxCapacity,
+      } = args;
+
+      const parking = await ctx.db.get(parkingId);
+      if (!parking) return failure('Parking not found', ErrorCodes.NOT_FOUND);
+      if (!verifyOrgOwnership(currentUser, parking.organizationId)) return failure('Not authorized', ErrorCodes.FORBIDDEN);
+
+      if (maxCapacity !== undefined) {
+        const currentVehicles = await ctx.db
+          .query('vehicles')
+          .withIndex('by_parkingId', (q) => q.eq('parkingId', parkingId))
+          .collect();
+
+        if (currentVehicles.length > maxCapacity) {
+          return failure(
+            `Cannot set capacity to ${maxCapacity}. Parking already has ${currentVehicles.length} vehicles.`,
+            ErrorCodes.CONFLICT,
+          );
+        }
       }
-      throw e;
-    }
 
-    const {
-      parkingId,
-      email,
-      name,
-      phone,
-      role,
-      parkingName,
-      description,
-      location,
-      website,
-      address,
-      imageStorageId,
-    } = args;
+      await Promise.all([
+        ctx.db.patch(parking.userId, { email, name, phone, role }),
+        ctx.db.patch(parkingId, {
+          name: parkingName,
+          description,
+          location,
+          website,
+          address,
+          imageStorageId,
+          maxCapacity,
+        }),
+      ]);
 
-    const parking = await ctx.db.get(parkingId);
-    if (!parking) {
-      return failure('Parking not found', ErrorCodes.NOT_FOUND);
-    }
-
-    if (!verifyOrgOwnership(currentUser, parking?.organizationId)) {
-      return failure('Not authorized', ErrorCodes.FORBIDDEN);
-    }
-
-    await ctx.db.patch(parking.userId, {
-      email,
-      name,
-      phone,
-      role,
+      return success({ success: true });
     });
-
-    await ctx.db.patch(parkingId, {
-      name: parkingName,
-      description,
-      location,
-      website,
-      address,
-      imageStorageId,
-    });
-
-    return success({ success: true });
   },
 });
 
@@ -220,16 +213,13 @@ export const update = mutation({
     address: v.string(),
     userId: v.id('users'),
     imageStorageId: v.optional(v.id('_storage')),
+    maxCapacity: v.optional(v.number()),
   },
   handler: async (ctx, { id, ...rest }) => {
     const user = await requireAdmin(ctx);
     const parking = await ctx.db.get(id);
-    if (!parking) {
-      throw new Error('Parking not found');
-    }
-    if (!verifyOrgOwnership(user, parking?.organizationId)) {
-      throw new AdminAuthError();
-    }
+    if (!parking) throw new Error('Parking not found');
+    if (!verifyOrgOwnership(user, parking.organizationId)) throw new AdminAuthError();
     await ctx.db.patch(id, rest);
   },
 });
@@ -247,69 +237,55 @@ export const anonymizeParking = mutation({
       deletedReportsCount: number;
     }>
   > => {
-    let currentUser;
-    try {
-      currentUser = await requireAdmin(ctx);
-    } catch (e) {
-      if (e instanceof AdminAuthError) {
-        return failure('Admin role required', ErrorCodes.FORBIDDEN);
+    return withAdminCheck(ctx, async (currentUser) => {
+      const parking = await ctx.db.get(args.id);
+      if (!parking) return failure('Parking not found', ErrorCodes.NOT_FOUND);
+      if (!verifyOrgOwnership(currentUser, parking.organizationId)) return failure('Not authorized', ErrorCodes.FORBIDDEN);
+
+      const parkingId = args.id;
+
+      const vehicles = await ctx.db
+        .query('vehicles')
+        .withIndex('by_parkingId', (q) => q.eq('parkingId', parkingId))
+        .collect();
+
+      await Promise.all(
+        vehicles.map((vehicle) =>
+          ctx.db.patch(vehicle._id, {
+            reference: `ANON-${vehicle._id.substring(0, 8)}`,
+            name: 'Anonymized Vehicle',
+          }),
+        ),
+      );
+
+      const reports = await ctx.db
+        .query('canceledViolations')
+        .withIndex('by_parkingId', (q) => q.eq('parkingId', parkingId))
+        .collect();
+
+      await Promise.all(reports.map((report) => ctx.db.delete(report._id)));
+
+      if (parking.imageStorageId) {
+        await ctx.storage.delete(parking.imageStorageId);
       }
-      throw e;
-    }
 
-    const parking = await ctx.db.get(args.id);
-    if (!parking) {
-      return failure('Parking not found', ErrorCodes.NOT_FOUND);
-    }
-
-    if (!verifyOrgOwnership(currentUser, parking?.organizationId)) {
-      return failure('Not authorized', ErrorCodes.FORBIDDEN);
-    }
-
-    const parkingId = args.id;
-
-    const vehicles = await ctx.db
-      .query('vehicles')
-      .withIndex('by_parkingId', (q) => q.eq('parkingId', parkingId))
-      .collect();
-
-    for (const vehicle of vehicles) {
-      await ctx.db.patch(vehicle._id, {
-        reference: `ANON-${vehicle._id.substring(0, 8)}`,
-        name: 'Anonymized Vehicle',
+      await ctx.db.patch(parkingId, {
+        name: `[Anonymized Parking ${parkingId.substring(0, 6)}]`,
+        description: '',
+        location: 'N/A',
+        website: '',
+        address: '',
+        imageStorageId: undefined,
+        unresolvedMakuleras: 0,
+        unresolvedFelparkering: 0,
       });
-    }
 
-    const reports = await ctx.db
-      .query('canceledViolations')
-      .withIndex('by_parkingId', (q) => q.eq('parkingId', parkingId))
-      .collect();
-
-    for (const report of reports) {
-      await ctx.db.delete(report._id);
-    }
-
-    if (parking.imageStorageId) {
-      await ctx.storage.delete(parking.imageStorageId);
-    }
-
-    await ctx.db.patch(parkingId, {
-      name: `[Anonymized Parking ${parkingId.substring(0, 6)}]`,
-      description: '',
-      location: 'N/A',
-      website: '',
-      address: '',
-      imageStorageId: undefined,
-      unresolvedMakuleras: 0,
-      unresolvedFelparkering: 0,
-    });
-
-    return success({
-      success: true,
-      message:
-        'Parking and associated vehicles have been successfully anonymized.',
-      anonymizedVehiclesCount: vehicles.length,
-      deletedReportsCount: reports.length,
+      return success({
+        success: true,
+        message: 'Parking and associated vehicles have been successfully anonymized.',
+        anonymizedVehiclesCount: vehicles.length,
+        deletedReportsCount: reports.length,
+      });
     });
   },
 });
@@ -330,6 +306,8 @@ export const createUserAndParking = mutation({
     parkingWebsite: v.string(),
     parkingAddress: v.string(),
     imageStorageId: v.optional(v.id('_storage')),
+    maxCapacity: v.optional(v.number()),
+    organizationId: v.optional(v.id('organizations')),
   },
   handler: async (
     ctx,
@@ -340,69 +318,52 @@ export const createUserAndParking = mutation({
       message: string;
     }>
   > => {
-    let currentUser;
-    try {
-      currentUser = await requireAdmin(ctx);
-    } catch (e) {
-      if (e instanceof AdminAuthError) {
-        return failure('Admin role required', ErrorCodes.FORBIDDEN);
-      }
-      throw e;
-    }
+    return withAdminCheck(ctx, async (currentUser) => {
+      const orgId = currentUser.role === 'SUPER_ADMIN'
+        ? (args.organizationId ?? getOrganizationId(currentUser))
+        : getOrganizationId(currentUser);
 
-    const orgId = getOrganizationId(currentUser);
-
-    const session = await createAuth(ctx).api.signUpEmail({
-      body: {
-        email: args.email,
-        password: args.password,
-        name: args.name,
-      },
-    });
-
-    if (!session?.user?.id) {
-      return failure(
-        'User creation failed, could not retrieve user ID',
-        ErrorCodes.INTERNAL_SERVER_ERROR,
-      );
-    }
-
-    let user = await ctx.db
-      .query('users')
-      .withIndex('by_userId', (q) => q.eq('userId', session.user.id))
-      .unique();
-
-    let userId: Id<'users'> | null = null;
-
-    if (!user) {
-      userId = await ctx.db.insert('users', {
-        email: args.email,
-        name: args.name,
-        role: args.role,
-        enabled: true,
-        userId: session.user.id,
-        organizationId: orgId ?? undefined,
+      const session = await createAuth(ctx).api.signUpEmail({
+        body: { email: args.email, password: args.password, name: args.name },
       });
-    } else {
-      userId = user._id;
-    }
 
-    await ctx.db.insert('parkings', {
-      name: args.parkingName,
-      description: args.parkingDescription,
-      location: args.parkingLocation,
-      website: args.parkingWebsite,
-      address: args.parkingAddress,
-      userId,
-      imageStorageId: args.imageStorageId,
-      organizationId: orgId ?? undefined,
-      unresolvedFelparkering: 0,
-      unresolvedMakuleras: 0,
-    });
+      if (!session?.user?.id) {
+        return failure('User creation failed, could not retrieve user ID', ErrorCodes.INTERNAL_SERVER_ERROR);
+      }
 
-    return success({
-      success: true,
-      message: `User ${args.email} and their parking created.`,
+      let user = await ctx.db
+        .query('users')
+        .withIndex('by_userId', (q) => q.eq('userId', session.user.id))
+        .unique();
+
+      const userId: Id<'users'> = user
+        ? user._id
+        : await ctx.db.insert('users', {
+            email: args.email,
+            name: args.name,
+            role: args.role,
+            enabled: true,
+            userId: session.user.id,
+            organizationId: orgId ?? undefined,
+          });
+
+      await ctx.db.insert('parkings', {
+        name: args.parkingName,
+        description: args.parkingDescription,
+        location: args.parkingLocation,
+        website: args.parkingWebsite,
+        address: args.parkingAddress,
+        userId,
+        imageStorageId: args.imageStorageId,
+        maxCapacity: args.maxCapacity,
+        organizationId: orgId ?? undefined,
+        unresolvedMakuleras: 0,
+      });
+
+      return success({
+        success: true,
+        message: `User ${args.email} and their parking created.`,
+      });
     });
   },
 });
@@ -410,7 +371,9 @@ export const createUserAndParking = mutation({
 export const getAvailabilityByParking = query({
   args: { parkingId: v.id('parkings') },
   handler: async (ctx, args) => {
-    await requireAdmin(ctx);
+    const user = await requireAdmin(ctx);
+    const parking = await ctx.db.get(args.parkingId);
+    if (parking) requireOrgAccess(user, parking.organizationId);
     return await ctx.db
       .query('parkingAvailability')
       .withIndex('by_parkingId', (q) => q.eq('parkingId', args.parkingId))
@@ -426,7 +389,8 @@ export const getAvailabilityByDateRange = query({
     parkingId: v.optional(v.id('parkings')),
   },
   handler: async (ctx, args) => {
-    await requireAdmin(ctx);
+    const user = await requireAdmin(ctx);
+    const orgId = getOrganizationId(user);
 
     let allAvailability;
 
@@ -435,6 +399,14 @@ export const getAvailabilityByDateRange = query({
         .query('parkingAvailability')
         .withIndex('by_parkingId', (q) =>
           q.eq('parkingId', args.parkingId as Id<'parkings'>),
+        )
+        .order('desc')
+        .collect();
+    } else if (orgId) {
+      allAvailability = await ctx.db
+        .query('parkingAvailability')
+        .withIndex('by_organizationId', (q) =>
+          q.eq('organizationId', orgId),
         )
         .order('desc')
         .collect();
@@ -568,7 +540,9 @@ export const updateAvailability = mutation({
     description: v.optional(v.string()),
   },
   handler: async (ctx, { id, ...rest }) => {
-    await requireAdmin(ctx);
+    const user = await requireAdmin(ctx);
+    const avail = await ctx.db.get(id);
+    if (avail) requireOrgAccess(user, avail.organizationId);
     await ctx.db.patch(id, rest);
     return { success: true };
   },
@@ -577,7 +551,9 @@ export const updateAvailability = mutation({
 export const deleteAvailability = mutation({
   args: { id: v.id('parkingAvailability') },
   handler: async (ctx, args) => {
-    await requireAdmin(ctx);
+    const user = await requireAdmin(ctx);
+    const avail = await ctx.db.get(args.id);
+    if (avail) requireOrgAccess(user, avail.organizationId);
     await ctx.db.delete(args.id);
     return { success: true };
   },
@@ -638,11 +614,24 @@ export const updateParkingInfo = mutation({
     instructions: v.optional(v.string()),
   },
   handler: async (ctx, args): Promise<CustomResponse<{ success: boolean }>> => {
-    await requireAdminOrEmployee(ctx);
+    const user = await requireAdminOrEmployee(ctx);
 
     const parking = await ctx.db.get(args.parkingId);
-    if (!parking) {
-      return failure('Parking not found', ErrorCodes.NOT_FOUND);
+    if (!parking) return failure('Parking not found', ErrorCodes.NOT_FOUND);
+    requireOrgAccess(user, parking.organizationId);
+
+    if (args.maxCapacity !== undefined) {
+      const currentVehicles = await ctx.db
+        .query('vehicles')
+        .withIndex('by_parkingId', (q) => q.eq('parkingId', args.parkingId))
+        .collect();
+
+      if (currentVehicles.length > args.maxCapacity) {
+        return failure(
+          `Cannot set capacity to ${args.maxCapacity}. Parking already has ${currentVehicles.length} vehicles.`,
+          ErrorCodes.CONFLICT,
+        );
+      }
     }
 
     const { parkingId, ...updates } = args;
@@ -657,12 +646,8 @@ export const deleteParking = mutation({
   handler: async (ctx, args) => {
     const user = await requireAdmin(ctx);
     const parking = await ctx.db.get(args.id);
-    if (!parking) {
-      throw new Error('Parking not found');
-    }
-    if (!verifyOrgOwnership(user, parking?.organizationId)) {
-      throw new AdminAuthError();
-    }
+    if (!parking) throw new Error('Parking not found');
+    if (!verifyOrgOwnership(user, parking.organizationId)) throw new AdminAuthError();
     await ctx.db.delete(args.id);
     return { success: true };
   },
@@ -706,9 +691,7 @@ export const deleteOrphanedParkings = mutation({
 
     const deletedCount = orphanedParkings.length;
 
-    for (const parking of orphanedParkings) {
-      await ctx.db.delete(parking._id);
-    }
+    await Promise.all(orphanedParkings.map((p) => ctx.db.delete(p._id)));
 
     return { success: true, deletedCount };
   },

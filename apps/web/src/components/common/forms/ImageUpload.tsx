@@ -10,9 +10,10 @@ interface ImageUploadProps {
   onChange: (file: File | null) => void;
   onRemove?: () => void;
   disabled?: boolean;
+  label?: string;
 }
 
-export function ImageUpload({ value, onChange, onRemove, disabled }: ImageUploadProps) {
+export function ImageUpload({ value, onChange, onRemove, disabled, label = "Image" }: ImageUploadProps) {
   const [dragActive, setDragActive] = useState(false);
   const [preview, setPreview] = useState<string | null>(value || null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -72,7 +73,7 @@ export function ImageUpload({ value, onChange, onRemove, disabled }: ImageUpload
 
   return (
     <div className="space-y-2">
-      <label className="text-sm font-medium">Parking Image</label>
+      <label className="text-sm font-medium">{label}</label>
 
       {preview ? (
         <div className="relative">

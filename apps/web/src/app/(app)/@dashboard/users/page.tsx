@@ -155,6 +155,7 @@ export default function UserListClient() {
         phone: data.phone,
         role: data.role,
         enabled: data.enabled,
+        organizationId: data.organizationId || undefined,
       });
       if (result !== null) {
         toast.success("User updated successfully!");
@@ -167,6 +168,7 @@ export default function UserListClient() {
         password: data.password,
         name: data.name,
         role: data.role,
+        organizationId: data.organizationId || undefined,
       });
       if (result !== null) {
         toast.success("New user created!");

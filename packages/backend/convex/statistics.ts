@@ -1,4 +1,5 @@
 import { v } from 'convex/values';
+import type { Id } from './_generated/dataModel';
 import { query } from './_generated/server';
 import { requireAdmin, requireAdminOrEmployee, getOrganizationId } from './auth/helpers';
 import { CustomResponse, failure, success, ErrorCodes } from './util';
@@ -276,7 +277,7 @@ export const getControlFeesByAgent = query({
           return { name: 'Unknown', total: stats.total, paid: stats.paid };
         }
 
-        const user = await ctx.db.get(agentId as any) as any;
+        const user = await ctx.db.get(agentId as Id<'users'>);
         return {
           name: user?.name || 'Unknown',
           total: stats.total,
@@ -315,7 +316,7 @@ export const getControlFeesStatistics = query({
         .filter((f) => f.status === 'PAID')
         .map(async (f) => {
           const lv = await ctx.db.get(f.locationViolationId);
-          if (lv) totalCollected += lv.price ?? 0;
+          if (lv) totalCollected += (lv as any).price ?? 0;
         }),
     );
 

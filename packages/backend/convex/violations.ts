@@ -1,6 +1,6 @@
 import { v } from 'convex/values';
 import { query } from './_generated/server';
-import { requireAdmin, getOrganizationId } from './auth/helpers';
+import { requireAdmin, getOrganizationId, requireOrgAccess } from './auth/helpers';
 
 export const list = query({
   args: {},
@@ -23,7 +23,9 @@ export const getViolationById = query({
     id: v.id('violations'),
   },
   handler: async (ctx, args) => {
-    await requireAdmin(ctx);
-    return await ctx.db.get(args.id);
+    const user = await requireAdmin(ctx);
+    const violation = await ctx.db.get(args.id);
+    if (violation) requireOrgAccess(user, violation.organizationId);
+    return violation;
   },
 });

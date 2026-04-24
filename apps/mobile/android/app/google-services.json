@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "556815003671",
+    "project_id": "crewsec-31357",
+    "storage_bucket": "crewsec-31357.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:556815003671:android:505810972a4a557fceec52",
+        "android_client_info": {
+          "package_name": "com.compiledideas.crewsec"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "556815003671-s77icmjqn60s5g0mma7agh6kntg56et9.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAPd2sT9JSb6pxl4tQ10u3PT3YVNifHizI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "556815003671-s77icmjqn60s5g0mma7agh6kntg56et9.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "556815003671-bcckvhs6n3p671la6g6oksf7g0nt4qnr.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.compiledideas.crewsec"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

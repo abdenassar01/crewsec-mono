@@ -25,6 +25,7 @@ type FormValues = {
   parkingLocation: string;
   parkingWebsite: string;
   parkingAddress: string;
+  maxCapacity?: string;
   parkingImage?: File | null;
 };
 
@@ -67,6 +68,7 @@ export function ParkingForm({ onSubmit, defaultValues, isPending }: ParkingFormP
       parkingLocation: defaultValues?.location ?? "",
       parkingWebsite: defaultValues?.website ?? "",
       parkingAddress: defaultValues?.address ?? "",
+      maxCapacity: defaultValues?.maxCapacity?.toString() ?? "",
       userId: defaultValues?.userId,
       parkingImage: null,
     },
@@ -290,6 +292,14 @@ export function ParkingForm({ onSubmit, defaultValues, isPending }: ParkingFormP
             form={form}
             disabled={isPending}
             required
+          />
+          <FieldInput
+            name="maxCapacity"
+            label="Max Capacity (optional)"
+            placeholder="Leave empty for unlimited"
+            type="number"
+            form={form}
+            disabled={isPending}
           />
         </div>
 

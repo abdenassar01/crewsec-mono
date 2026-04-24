@@ -13,7 +13,8 @@ export const updateUserFormSchema = z.object({
   location: z.string().min(1, 'Location is required'),
   website: z.string().optional(),
   address: z.string().optional(),
-  image: z.string().optional(), // Storage ID
+  image: z.string().optional(),
+  maxCapacity: z.string().optional(),
 });
 
 export type UpdateUserFormValues = z.infer<typeof updateUserFormSchema>;

@@ -36,19 +36,16 @@ export function PrinterSection({ control }: Props) {
 
   const scan = () => {
     setLoading(true);
-    console.log('REF: ', value);
     BLEPrinter.init()
       .then(() => {
         return BLEPrinter.getDeviceList();
       })
       .then((_devices) => {
-        console.log('Devices found: ', _devices);
         setDevices(_devices);
 
         setLoading(false);
       })
-      .catch((err) => {
-        console.log('EER: ', err);
+      .catch(() => {
         setLoading(false);
       });
   };
@@ -95,7 +92,6 @@ export function PrinterSection({ control }: Props) {
                 setLoading(true);
                 BLEPrinter.connectPrinter(item?.inner_mac_address)
                   .then((printer) => {
-                    console.log('Connected to printer: ', printer);
                     onChange(printer);
                     showMessage({
                       message: `Connected to ${printer.device_name}`,
@@ -109,7 +105,6 @@ export function PrinterSection({ control }: Props) {
                       message: `Connection failed: ${err.message || JSON.stringify(err)}`,
                       type: 'danger',
                     });
-                    console.log('Error: ', JSON.stringify(err));
                     setLoading(false);
                   });
               }}

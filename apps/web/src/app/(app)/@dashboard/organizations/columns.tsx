@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { MoreHorizontalFreeIcons, View04FreeIcons, Delete02FreeIcons, Edit02FreeIcons } from "@hugeicons/core-free-icons";
+import { MoreHorizontalFreeIcons, ViewFreeIcons, Delete02FreeIcons, Edit02FreeIcons } from "@hugeicons/core-free-icons";
 import type { Doc } from "@convex/_generated/dataModel";
 
 const statusColors: Record<string, string> = {
@@ -82,7 +82,7 @@ export const getColumns = (
               Edit Organization
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => onViewStats(org)}>
-              <HugeiconsIcon icon={View04FreeIcons} className="mr-2 h-4 w-4" />
+              <HugeiconsIcon icon={ViewFreeIcons} className="mr-2 h-4 w-4" />
               View Stats
             </DropdownMenuItem>
             <DropdownMenuSeparator />

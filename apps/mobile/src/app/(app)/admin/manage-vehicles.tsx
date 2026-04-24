@@ -113,8 +113,6 @@ export const VehiclesTab = () => {
     query,
   });
 
-  console.log('Vehicles: ', vehicles);
-
   return (
     <ScrollView
       className="mt-3"

@@ -227,6 +227,7 @@ export default function ParkingList() {
           website: data.parkingWebsite,
           address: data.parkingAddress,
           imageStorageId: imageStorageId || editingParking.imageStorageId,
+          maxCapacity: data.maxCapacity ? parseInt(data.maxCapacity, 10) : undefined,
         });
         if (result !== null) {
           toast.success("Parking and user updated successfully!");
@@ -244,7 +245,8 @@ export default function ParkingList() {
           parkingWebsite: data.parkingWebsite,
           parkingAddress: data.parkingAddress,
           imageStorageId: imageStorageId as Id<'_storage'>,
-          name: data.name
+          name: data.name,
+          maxCapacity: data.maxCapacity ? parseInt(data.maxCapacity, 10) : undefined,
         });
 
         if (result !== null) {

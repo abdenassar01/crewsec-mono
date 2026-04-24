@@ -1,15 +1,19 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useForm } from "@tanstack/react-form";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { Doc } from "@convex/_generated/dataModel";
+import { ImageUpload } from "@/components/common/forms/ImageUpload";
+import type { Doc, Id } from "@convex/_generated/dataModel";
+import { useSafeQuery } from "@/lib/hooks";
+import { api } from "@convex/_generated/api";
 
 type OrganizationFormProps = {
   onSubmit: (data: any, isEdit: boolean) => void;
-  defaultValues?: Partial<Doc<"organizations">> | null;
+  defaultValues?: Partial<Doc<"organizations"> & { logoUrl?: string }> | null;
   isPending: boolean;
 };
 
@@ -26,6 +30,19 @@ const orgSchema = z.object({
 export function OrganizationForm({ onSubmit, defaultValues, isPending }: OrganizationFormProps) {
   const isEditMode = !!defaultValues?._id;
 
+  const orgDetails = useSafeQuery(
+    api.organizations.getById,
+    isEditMode && defaultValues?._id ? { id: defaultValues._id } : ("skip" as any)
+  );
+  const logoUrl = (orgDetails as any)?.data?.logoUrl || (orgDetails as any)?.logoUrl || null;
+
+  const [currentLogo, setCurrentLogo] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(logoUrl);
+
+  useEffect(() => {
+    if (logoUrl) setPreviewUrl(logoUrl);
+  }, [logoUrl]);
+
   const form = useForm({
     defaultValues: {
       name: defaultValues?.name ?? "",
@@ -37,9 +54,21 @@ export function OrganizationForm({ onSubmit, defaultValues, isPending }: Organiz
       subscriptionStatus: defaultValues?.subscriptionStatus ?? "TRIAL",
     },
     onSubmit: async ({ value }) => {
-      await onSubmit(value, isEditMode);
+      const dataToSubmit = currentLogo
+        ? { ...value, logoImage: currentLogo }
+        : value;
+      await onSubmit(dataToSubmit, isEditMode);
     },
   });
+
+  const handleLogoChange = (file: File | null) => {
+    setCurrentLogo(file);
+  };
+
+  const handleLogoRemove = () => {
+    setCurrentLogo(null);
+    setPreviewUrl(null);
+  };
 
   return (
     <form
@@ -50,6 +79,13 @@ export function OrganizationForm({ onSubmit, defaultValues, isPending }: Organiz
       }}
       className="space-y-4"
     >
+      <ImageUpload
+        value={previewUrl}
+        onChange={handleLogoChange}
+        onRemove={handleLogoRemove}
+        disabled={isPending}
+        label="Organization Logo"
+      />
       <form.Field
         name="name"
         validators={{ onChange: orgSchema.shape.name }}

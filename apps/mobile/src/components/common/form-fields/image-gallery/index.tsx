@@ -46,10 +46,6 @@ export function ImageGalleryItem({ control, name, label, className }: Props) {
     try {
       const storageIds = await uploadPhotos(photos);
       storageIds.forEach((id) => append(id));
-
-      setTimeout(() => {
-        console.log('Form value after append:', value);
-      }, 1000);
     } catch (error) {
       console.error('Failed to upload photos:', error);
     }

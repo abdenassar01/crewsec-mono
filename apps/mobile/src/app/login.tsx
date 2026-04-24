@@ -19,10 +19,8 @@ export default function Login() {
       password,
       rememberMe: true,
       fetchOptions: {
-        onSuccess: (context) => {
-          console.log('AUTH: ', context);
+        onSuccess: (_context) => {
           setTimeout(() => {
-            console.log('Redirecting to admin dashboard');
             replace('/');
           }, 500);
           showMessage({ message: 'Login successful', type: 'success' });
@@ -30,7 +28,6 @@ export default function Login() {
           setLoading(false);
         },
         onError: (error) => { 
-          console.log('AUTH: ', error);
           showMessage({
             message: error.error.message || 'Login failed',
             type: 'danger',

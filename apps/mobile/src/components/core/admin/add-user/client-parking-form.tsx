@@ -11,7 +11,9 @@ import {
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { z } from 'zod';
 
-import { Button, Text } from '@/components/ui';
+import { Button, ControlledSelect, Text } from '@/components/ui';
+import { api } from 'convex/_generated/api';
+import { useSafeQuery } from '@/hooks/use-convex-hooks';
 
 import { AddUserFirstStep, AddUserSecondStep, AddUserThirdStep } from './steps';
 
@@ -25,8 +27,10 @@ const clientParkingFormSchema = z.object({
   location: z.string().min(1, 'Location is required'),
   website: z.string().url('Invalid website URL'),
   address: z.string().min(1, 'Address is required'),
+  maxCapacity: z.string().optional(),
   image: z.string().optional(),
   role: z.enum(['ADMIN', 'EMPLOYEE', 'CLIENT', 'SUPER_ADMIN']).default('CLIENT'),
+  organizationId: z.string().optional(),
 });
 
 export type ClientParkingFormValues = z.infer<typeof clientParkingFormSchema>;
@@ -45,6 +49,16 @@ export function ClientParkingForm({
   const { height: _height } = useWindowDimensions();
   const [currentStep, setCurrentStep] = React.useState<number>(1);
 
+  const currentUser = useSafeQuery(api.users.getCurrentUserProfile);
+  const organizations = useSafeQuery(api.organizations.list);
+  const isSuperAdmin = (currentUser as any)?.role === 'SUPER_ADMIN';
+  const orgList = (organizations as any[]) ?? [];
+
+  const orgOptions = orgList.map((org: any) => ({
+    label: org.name,
+    value: org._id,
+  }));
+
   const { control, handleSubmit, trigger } = useForm<ClientParkingFormValues>({
     resolver: zodResolver(clientParkingFormSchema),
     defaultValues: {
@@ -57,8 +71,10 @@ export function ClientParkingForm({
       location: '',
       website: '',
       address: '',
+      maxCapacity: '',
       image: '',
       role: 'CLIENT',
+      organizationId: '',
     },
   });
 
@@ -82,11 +98,24 @@ export function ClientParkingForm({
   const getStep = () => {
     switch (currentStep) {
       case 1:
-        return <AddUserFirstStep control={control} />;
+        return (
+          <>
+            <AddUserFirstStep control={control as any} />
+            {isSuperAdmin && orgOptions.length > 0 && (
+              <ControlledSelect
+                label="Organization"
+                control={control as any}
+                name="organizationId"
+                options={orgOptions}
+                placeholder="Select organization"
+              />
+            )}
+          </>
+        );
       case 2:
-        return <AddUserSecondStep control={control} />;
+        return <AddUserSecondStep control={control as any} />;
       case 3:
-        return <AddUserThirdStep control={control} />;
+        return <AddUserThirdStep control={control as any} />;
       default:
         return null;
     }

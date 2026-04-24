@@ -38,6 +38,7 @@ interface ParkingWithUser {
   website?: string;
   address: string;
   userId: Id<'users'>;
+  maxCapacity?: number;
   unresolvedMakuleras?: number;
   unresolvedFelparkering?: number;
   imageUrl?: string | null;
@@ -83,6 +84,7 @@ export function UpdateClientParkingForm({
       location: parking?.location || '',
       website: parking?.website || '',
       parkingName: parking?.name || '',
+      maxCapacity: parking?.maxCapacity?.toString() || '',
       role: parking?.user?.role || 'CLIENT',
     },
   });

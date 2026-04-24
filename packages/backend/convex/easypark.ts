@@ -34,7 +34,6 @@ export const checkParking = httpAction(async (ctx, request) => {
 
   try {
     const fullUrl = `${easyparkUrl}?licenseNumber=${encodeURIComponent(licenseNumber)}`;
-    console.log('Making Easypark API call to:', fullUrl);
 
     const headers = new Headers();
     const authString = btoa(`${username}:${password}`);

@@ -10,7 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { OrganizationForm } from "./organization-form";
 import { getColumns } from "./columns";
 import { api } from "@convex/_generated/api";
-import type { Doc } from "@convex/_generated/dataModel";
+import type { Doc, Id } from "@convex/_generated/dataModel";
 import { useSafeMutation, useSafeQuery } from "@/lib/hooks";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
@@ -20,15 +20,17 @@ export default function OrganizationListPage() {
   const [deleteTarget, setDeleteTarget] = React.useState<Doc<"organizations"> | null>(null);
   const [statsTarget, setStatsTarget] = React.useState<Doc<"organizations"> | null>(null);
 
-  const { data: organizations, isLoading } = useSafeQuery(api.organizations.list);
+  const organizations = useSafeQuery(api.organizations.list);
+  const isLoading = organizations === undefined;
   const stats = useSafeQuery(
     api.organizations.getOrgStats,
-    statsTarget ? { id: statsTarget._id } : "skip"
+    statsTarget ? { id: statsTarget._id } : ("skip" as any)
   );
 
   const createOrg = useSafeMutation(api.organizations.create);
   const updateOrg = useSafeMutation(api.organizations.update);
   const deleteOrg = useSafeMutation(api.organizations.remove);
+  const getUploadUrl = useSafeMutation(api.organizations.getUploadUrl);
 
   const handleDelete = (orgId: Doc<"organizations">["_id"]) => {
     const org = (organizations as any[])?.find((o: any) => o._id === orgId);
@@ -61,6 +63,30 @@ export default function OrganizationListPage() {
   );
 
   const handleFormSubmit = async (data: any, isEdit: boolean) => {
+    let logoStorageId: Id<'_storage'> | null = null;
+
+    if (data.logoImage && data.logoImage instanceof File) {
+      const uploadUrl = await getUploadUrl();
+      if (!uploadUrl) {
+        toast.error("Failed to get upload URL");
+        return;
+      }
+
+      const response = await fetch(uploadUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': data.logoImage.type },
+        body: data.logoImage,
+      });
+
+      if (response.ok) {
+        const { storageId } = await response.json();
+        logoStorageId = storageId;
+      } else {
+        toast.error('Failed to upload logo');
+        return;
+      }
+    }
+
     if (isEdit) {
       if (!editingOrg) return;
       const result = await updateOrg({
@@ -72,6 +98,7 @@ export default function OrganizationListPage() {
         address: data.address,
         website: data.website,
         subscriptionStatus: data.subscriptionStatus,
+        logoStorageId: logoStorageId || editingOrg.logoStorageId,
       });
       if (result !== null) {
         toast.success("Organization updated successfully!");

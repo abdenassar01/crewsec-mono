@@ -51,6 +51,8 @@
     "complaint-type": "Select complaint type",
     "dates": "Dates",
     "description": "Description",
+    "max-capacity": "Max Capacity (optional)",
+    "max-capacity-placeholder": "Leave empty for unlimited",
     "email": "Email",
     "role": "Role",
     "select-role": "Select Role",

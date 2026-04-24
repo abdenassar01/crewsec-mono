@@ -7,6 +7,8 @@ import {
   getAuthenticatedUser,
   getOrganizationId,
   requireAdmin,
+  requireOrgAccess,
+  verifyOrgOwnership,
 } from './auth/helpers';
 import { type CustomResponse, ErrorCodes, failure, success } from './util';
 
@@ -138,7 +140,9 @@ export const update = mutation({
     parkingId: v.optional(v.id('parkings')),
   },
   handler: async (ctx, args) => {
-    await requireAdmin(ctx);
+    const user = await requireAdmin(ctx);
+    const violation = await ctx.db.get(args.id);
+    if (violation) requireOrgAccess(user, violation.organizationId);
     const { id, ...rest } = args;
     return await ctx.db.patch(id, rest);
   },
@@ -359,57 +363,31 @@ export const resolveViolation = mutation({
     notes: v.optional(v.string()),
   },
   handler: async (ctx, args): Promise<CustomResponse<{ success: boolean }>> => {
-    const authUser = await authComponent.getAuthUser(ctx);
+    const currentUser = await getAuthenticatedUser(ctx);
+    if (!currentUser) return failure('Not authenticated', ErrorCodes.UNAUTHORIZED);
 
-    if (!authUser) {
-      return failure('Not authenticated', ErrorCodes.UNAUTHORIZED);
-    }
-    const user = await ctx.auth.getUserIdentity();
-    if (!user) {
-      return failure('Not authenticated', ErrorCodes.UNAUTHORIZED);
-    }
-
-    // Get the current user from Convex users table
-    const currentUser = await ctx.db
-      .query('users')
-      .withIndex('by_userId', (q) => q.eq('userId', user.subject))
-      .unique();
-
-    if (!currentUser) {
-      return failure('User not found', ErrorCodes.NOT_FOUND);
-    }
-
-    // Get the violation to check if it was previously unresolved
     const violation = await ctx.db.get(args.id);
-    if (!violation) {
-      return failure('Violation not found', ErrorCodes.NOT_FOUND);
+    if (!violation) return failure('Violation not found', ErrorCodes.NOT_FOUND);
+    if (!verifyOrgOwnership(currentUser, violation.organizationId)) {
+      return failure('Not authorized', ErrorCodes.FORBIDDEN);
     }
 
-    // Update the violation
-    await ctx.db.patch(args.id, {
-      resolved: true,
-      notes: args.notes,
-    });
+    await ctx.db.patch(args.id, { resolved: true, notes: args.notes });
 
-    // Update parking count if it was previously unresolved
     if (!violation.resolved) {
       const parking = await ctx.db.get(violation.parkingId);
       if (parking) {
-        if (violation.cause === 'FELPARKERING') {
-          await ctx.db.patch(violation.parkingId, {
-            unresolvedFelparkering: Math.max(
-              0,
-              (parking.unresolvedFelparkering || 0) - 1,
-            ),
-          });
-        } else if (violation.cause === 'MAKULERA') {
-          await ctx.db.patch(violation.parkingId, {
-            unresolvedMakuleras: Math.max(
-              0,
-              (parking.unresolvedMakuleras || 0) - 1,
-            ),
-          });
-        }
+        const field =
+          violation.cause === 'FELPARKERING'
+            ? 'unresolvedFelparkering'
+            : 'unresolvedMakuleras';
+        const currentValue =
+          violation.cause === 'FELPARKERING'
+            ? parking.unresolvedFelparkering || 0
+            : parking.unresolvedMakuleras || 0;
+        await ctx.db.patch(violation.parkingId, {
+          [field]: Math.max(0, currentValue - 1),
+        });
       }
     }
 

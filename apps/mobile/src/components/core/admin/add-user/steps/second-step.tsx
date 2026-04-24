@@ -40,6 +40,13 @@ export function AddUserSecondStep({ control }: Props) {
         numberOfLines={4}
         className="min-h-40"
       />
+      <ControlledInput
+        label={t('forms.max-capacity')}
+        placeholder={t('forms.max-capacity-placeholder')}
+        control={control}
+        name="maxCapacity"
+        keyboardType="numeric"
+      />
     </View>
   );
 }

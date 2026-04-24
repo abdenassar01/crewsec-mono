@@ -42,6 +42,7 @@ export function NewAddUser() {
         name: data.name,
         role: data.role,
         avatar: data.avatar || undefined,
+        organizationId: data.organizationId || undefined,
       });
 
       showMessage({ message: 'User created successfully', type: 'success' });
@@ -62,18 +63,18 @@ export function NewAddUser() {
 
     try {
       await createUserAndParkingMutation({
-        // User details
         email: data.email,
         password: data.password,
         name: data.name,
         role: 'CLIENT',
-        // Parking details
         parkingName: data.parkingName,
         parkingDescription: data.description,
         parkingLocation: data.location,
         parkingWebsite: data.website,
         parkingAddress: data.address,
+        maxCapacity: data.maxCapacity ? parseInt(data.maxCapacity, 10) : undefined,
         imageStorageId: data.image || undefined,
+        organizationId: data.organizationId || undefined,
       });
 
       showMessage({

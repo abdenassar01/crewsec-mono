@@ -31,14 +31,13 @@ export function VehicleControlStepFour({ control }: Props) {
 
   useEffect(() => {
     setLoading(true);
-    console.log('REF');
     BLEPrinter.init().then(() => {
       BLEPrinter.getDeviceList()
         .then((_devices) => {
           setDevices(_devices);
           setLoading(false);
         })
-        .catch((err) => console.log('EER: ', err));
+        .catch(() => {});
     });
   }, []);
 
@@ -86,7 +85,6 @@ export function VehicleControlStepFour({ control }: Props) {
                       message: err.message,
                       type: 'danger',
                     });
-                    console.log('Error: ', JSON.stringify(err));
                   });
               }}
             >

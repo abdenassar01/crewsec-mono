@@ -84,8 +84,6 @@ export function UploadAvatar({
 
             const { storageId } = await response.json();
 
-            console.log('Uploaded storageId:', storageId);
-
             setImageUrl(asset.uri);
             onChange(storageId as Id<'_storage'>);
 

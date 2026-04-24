@@ -5,9 +5,7 @@ import { requestBluetoothPermissions } from '@/lib';
 
 export default function AdminLayout() {
   useEffect(() => {
-    requestBluetoothPermissions().then((_granted) => {
-      console.log('Granted: ', _granted);
-    });
+    requestBluetoothPermissions().then(() => {});
   }, []);
   return (
     <Stack initialRouteName="index" screenOptions={{ headerShown: false }}>

@@ -2,7 +2,7 @@ import { v } from 'convex/values';
 
 import type { Doc } from './_generated/dataModel';
 import { mutation, query } from './_generated/server';
-import { requireAdmin, getAuthenticatedUser, getOrganizationId } from './auth/helpers';
+import { requireAdmin, getAuthenticatedUser, getOrganizationId, requireOrgAccess } from './auth/helpers';
 import { type CustomResponse, ErrorCodes, failure, success } from './util';
 
 // --- Car Brands ---
@@ -44,7 +44,9 @@ export const createCarBrand = mutation({
 export const updateCarBrand = mutation({
   args: { id: v.id('carBrands'), label: v.string() },
   handler: async (ctx, args) => {
-    await requireAdmin(ctx);
+    const user = await requireAdmin(ctx);
+    const brand = await ctx.db.get(args.id);
+    if (brand) requireOrgAccess(user, brand.organizationId);
     return ctx.db.patch(args.id, { label: args.label });
   },
 });
@@ -52,7 +54,9 @@ export const updateCarBrand = mutation({
 export const deleteCarBrand = mutation({
   args: { id: v.id('carBrands') },
   handler: async (ctx, args) => {
-    await requireAdmin(ctx);
+    const user = await requireAdmin(ctx);
+    const brand = await ctx.db.get(args.id);
+    if (brand) requireOrgAccess(user, brand.organizationId);
     return ctx.db.delete(args.id);
   },
 });
@@ -126,7 +130,9 @@ export const createLocation = mutation({
 export const updateLocation = mutation({
   args: { id: v.id('locations'), label: v.string() },
   handler: async (ctx, args) => {
-    await requireAdmin(ctx);
+    const user = await requireAdmin(ctx);
+    const location = await ctx.db.get(args.id);
+    if (location) requireOrgAccess(user, location.organizationId);
     return ctx.db.patch(args.id, { label: args.label });
   },
 });
@@ -134,7 +140,9 @@ export const updateLocation = mutation({
 export const deleteLocation = mutation({
   args: { id: v.id('locations') },
   handler: async (ctx, args) => {
-    await requireAdmin(ctx);
+    const user = await requireAdmin(ctx);
+    const location = await ctx.db.get(args.id);
+    if (location) requireOrgAccess(user, location.organizationId);
     return ctx.db.delete(args.id);
   },
 });
@@ -230,7 +238,9 @@ export const updateTown = mutation({
     number: v.optional(v.number()),
   },
   handler: async (ctx, { id, ...rest }) => {
-    await requireAdmin(ctx);
+    const user = await requireAdmin(ctx);
+    const town = await ctx.db.get(id);
+    if (town) requireOrgAccess(user, town.organizationId);
     return ctx.db.patch(id, rest);
   },
 });
@@ -238,7 +248,9 @@ export const updateTown = mutation({
 export const deleteTown = mutation({
   args: { id: v.id('towns') },
   handler: async (ctx, args) => {
-    await requireAdmin(ctx);
+    const user = await requireAdmin(ctx);
+    const town = await ctx.db.get(args.id);
+    if (town) requireOrgAccess(user, town.organizationId);
     return ctx.db.delete(args.id);
   },
 });
@@ -286,7 +298,9 @@ export const updateViolation = mutation({
     number: v.optional(v.number()),
   },
   handler: async (ctx, { id, ...rest }) => {
-    await requireAdmin(ctx);
+    const user = await requireAdmin(ctx);
+    const violation = await ctx.db.get(id);
+    if (violation) requireOrgAccess(user, violation.organizationId);
     return ctx.db.patch(id, rest);
   },
 });
@@ -294,7 +308,9 @@ export const updateViolation = mutation({
 export const deleteViolation = mutation({
   args: { id: v.id('violations') },
   handler: async (ctx, args) => {
-    await requireAdmin(ctx);
+    const user = await requireAdmin(ctx);
+    const violation = await ctx.db.get(args.id);
+    if (violation) requireOrgAccess(user, violation.organizationId);
     return ctx.db.delete(args.id);
   },
 });
@@ -390,7 +406,9 @@ export const createLocationViolation = mutation({
 export const updateLocationViolation = mutation({
   args: { id: v.id('locationViolations'), price: v.optional(v.number()) },
   handler: async (ctx, { id, ...rest }) => {
-    await requireAdmin(ctx);
+    const user = await requireAdmin(ctx);
+    const lv = await ctx.db.get(id);
+    if (lv) requireOrgAccess(user, lv.organizationId);
     return ctx.db.patch(id, rest);
   },
 });
@@ -398,7 +416,9 @@ export const updateLocationViolation = mutation({
 export const deleteLocationViolation = mutation({
   args: { id: v.id('locationViolations') },
   handler: async (ctx, args) => {
-    await requireAdmin(ctx);
+    const user = await requireAdmin(ctx);
+    const lv = await ctx.db.get(args.id);
+    if (lv) requireOrgAccess(user, lv.organizationId);
     return ctx.db.delete(args.id);
   },
 });

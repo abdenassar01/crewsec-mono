@@ -15,6 +15,8 @@ import {
   ControlledSelect,
   Text,
 } from '@/components/ui';
+import { api } from 'convex/_generated/api';
+import { useSafeQuery } from '@/hooks/use-convex-hooks';
 
 const adminUserFormSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -22,6 +24,7 @@ const adminUserFormSchema = z.object({
   phone: z.string().optional(),
   role: z.enum(['ADMIN', 'EMPLOYEE', 'SUPER_ADMIN']),
   enabled: z.boolean(),
+  organizationId: z.string().optional(),
 });
 
 export type AdminUserFormValues = z.infer<typeof adminUserFormSchema>;
@@ -47,6 +50,16 @@ interface Props {
 export function UpdateUserForm({ onSubmit, user, pending = false }: Props) {
   const { height: _height } = useWindowDimensions();
 
+  const currentUser = useSafeQuery(api.users.getCurrentUserProfile);
+  const organizations = useSafeQuery(api.organizations.list);
+  const isSuperAdmin = (currentUser as any)?.role === 'SUPER_ADMIN';
+  const orgList = (organizations as any[]) ?? [];
+
+  const orgOptions = orgList.map((org: any) => ({
+    label: org.name,
+    value: org._id,
+  }));
+
   const { control, handleSubmit } = useForm<AdminUserFormValues>({
     resolver: zodResolver(adminUserFormSchema),
     defaultValues: {
@@ -60,6 +73,7 @@ export function UpdateUserForm({ onSubmit, user, pending = false }: Props) {
           ? user.role
           : 'EMPLOYEE',
       enabled: true,
+      organizationId: (user as any)?.organizationId || '',
     },
   });
 
@@ -123,6 +137,16 @@ export function UpdateUserForm({ onSubmit, user, pending = false }: Props) {
             options={roleOptions}
             placeholder={t('forms.select-role')}
           />
+
+          {isSuperAdmin && orgOptions.length > 0 && (
+            <ControlledSelect
+              label="Organization"
+              control={control}
+              name="organizationId"
+              options={orgOptions}
+              placeholder="Select organization"
+            />
+          )}
         </View>
       </ScrollView>
       <View className="flex-row justify-end gap-[2%] px-4">

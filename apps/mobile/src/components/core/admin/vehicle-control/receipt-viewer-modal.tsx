@@ -59,7 +59,6 @@ export function ReceiptViewerModal({ control }: Props) {
 
   const handlePrintAndSubmit = async () => {
     const user = getUser();
-    console.log('formData: ', formData);
     if (!formData.device) {
       showMessage({
         message: 'Please select a printer first',

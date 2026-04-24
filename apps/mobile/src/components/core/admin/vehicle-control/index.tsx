@@ -72,10 +72,8 @@ export function VehicleControlOffline() {
       case 'locations':
         return setCurrentStep('towns');
       case 'towns':
-        console.log('selectedLocationId', selectedLocationId);
         return setCurrentStep('town-detail');
       case 'town-detail':
-        console.log('selectedTownId', selectedTownId);
         return setCurrentStep('reference-detail');
       default:
         break;

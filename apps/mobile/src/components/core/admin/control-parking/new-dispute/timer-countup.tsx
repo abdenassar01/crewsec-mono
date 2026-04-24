@@ -51,7 +51,6 @@ export function TimerCountUp({
 
     if (startDateField.value === null) {
       startDateField.onChange(new Date(now));
-      console.log('Form Start Date Set:', new Date(now));
     }
 
     endDateField.onChange(null);
@@ -68,8 +67,6 @@ export function TimerCountUp({
 
     const now = Date.now();
     endDateField.onChange(new Date(now));
-    console.log('Form End Date Set:', new Date(now));
-    console.log('Elapsed:', elapsedTime);
 
     setIsRunning(false);
 

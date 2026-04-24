@@ -1,14 +1,56 @@
 import { v } from 'convex/values';
 
+import { ConvexError } from 'convex/values';
+
 import { query } from './_generated/server';
 import { mutation } from './_generated/server';
-import type { Id } from './_generated/dataModel';
+import type { Doc, Id } from './_generated/dataModel';
+import type { MutationCtx, QueryCtx } from './_generated/server';
 import {
   getAuthenticatedUser,
   getOrganizationId,
   requireAdmin,
+  requireOrgAccess,
 } from './auth/helpers';
 import { type CustomResponse, ErrorCodes, failure, success } from './util';
+
+async function checkParkingCapacity(
+  ctx: QueryCtx | MutationCtx,
+  parkingId: Id<'parkings'>,
+  additionalCount: number = 1,
+): Promise<void> {
+  const parking = await ctx.db.get(parkingId);
+  if (!parking?.maxCapacity) return;
+
+  const currentVehicles = await ctx.db
+    .query('vehicles')
+    .withIndex('by_parkingId', (q) => q.eq('parkingId', parkingId))
+    .collect();
+
+  if (currentVehicles.length + additionalCount > parking.maxCapacity) {
+    throw new ConvexError({
+      message: `Parking capacity exceeded. Maximum: ${parking.maxCapacity}, current: ${currentVehicles.length}, trying to add: ${additionalCount}`,
+      code: 'CAPACITY_EXCEEDED',
+    });
+  }
+}
+
+async function getClientUserAndParking(ctx: QueryCtx | MutationCtx): Promise<
+  | { error: CustomResponse<any> }
+  | { user: any; parking: any }
+> {
+  const user = await getAuthenticatedUser(ctx);
+  if (!user) return { error: failure('Not authenticated', ErrorCodes.UNAUTHORIZED) };
+
+  const parking = await ctx.db
+    .query('parkings')
+    .withIndex('by_userId', (q) => q.eq('userId', user._id))
+    .unique();
+
+  if (!parking) return { error: failure('Parking not found for this user', ErrorCodes.NOT_FOUND) };
+
+  return { user, parking };
+}
 
 export const insertBatch = mutation({
   args: {
@@ -24,7 +66,10 @@ export const insertBatch = mutation({
   },
   handler: async (ctx, args) => {
     const user = await requireAdmin(ctx);
+
+    const capacityByParking = new Map<Id<'parkings'>, { max: number; current: number }>();
     const results: Array<{ skipped?: boolean; success?: boolean; id?: Id<'vehicles'>; reference: string; error?: string }> = [];
+
     for (const vehicle of args.vehicles) {
       try {
         const existing = await ctx.db
@@ -39,6 +84,25 @@ export const insertBatch = mutation({
           results.push({ skipped: true, reference: vehicle.reference });
           continue;
         }
+
+        if (!capacityByParking.has(vehicle.parkingId)) {
+          const parking = await ctx.db.get(vehicle.parkingId);
+          const currentCount = (await ctx.db
+            .query('vehicles')
+            .withIndex('by_parkingId', (q) => q.eq('parkingId', vehicle.parkingId))
+            .collect()).length;
+          capacityByParking.set(vehicle.parkingId, {
+            max: parking?.maxCapacity ?? Infinity,
+            current: currentCount,
+          });
+        }
+
+        const cap = capacityByParking.get(vehicle.parkingId)!;
+        if (cap.current + 1 > cap.max) {
+          results.push({ error: `Capacity exceeded for parking (max: ${cap.max})`, reference: vehicle.reference });
+          continue;
+        }
+        cap.current += 1;
 
         const id = await ctx.db.insert('vehicles', {
           ...vehicle,
@@ -128,12 +192,16 @@ export const search = query({
         )
         .collect();
     }
-    return await ctx.db
+    const results = await ctx.db
       .query('vehicles')
       .withSearchIndex('by_reference_search', (q) =>
         q.search('reference', args.query),
       )
       .collect();
+    if (orgId) {
+      return results.filter((v) => v.organizationId === orgId);
+    }
+    return results;
   },
 });
 
@@ -188,8 +256,10 @@ export const searchWithDetails = query({
 export const getById = query({
   args: { id: v.id('vehicles') },
   handler: async (ctx, args) => {
-    await requireAdmin(ctx);
-    return await ctx.db.get(args.id);
+    const user = await requireAdmin(ctx);
+    const vehicle = await ctx.db.get(args.id);
+    if (vehicle) requireOrgAccess(user, vehicle.organizationId);
+    return vehicle;
   },
 });
 
@@ -206,6 +276,7 @@ export const create = mutation({
   },
   handler: async (ctx, args) => {
     const user = await requireAdmin(ctx);
+    await checkParkingCapacity(ctx, args.parkingId);
     await ctx.db.insert('vehicles', {
       ...args,
       organizationId: getOrganizationId(user) ?? undefined,
@@ -225,7 +296,9 @@ export const update = mutation({
     joinDate: v.optional(v.number()),
   },
   handler: async (ctx, { id, ...rest }) => {
-    await requireAdmin(ctx);
+    const user = await requireAdmin(ctx);
+    const vehicle = await ctx.db.get(id);
+    if (vehicle) requireOrgAccess(user, vehicle.organizationId);
     await ctx.db.patch(id, rest);
   },
 });
@@ -236,7 +309,9 @@ export const update = mutation({
 export const deleteVehicle = mutation({
   args: { id: v.id('vehicles') },
   handler: async (ctx, args) => {
-    await requireAdmin(ctx);
+    const user = await requireAdmin(ctx);
+    const vehicle = await ctx.db.get(args.id);
+    if (vehicle) requireOrgAccess(user, vehicle.organizationId);
     await ctx.db.delete(args.id);
   },
 });
@@ -284,50 +359,23 @@ export const getMyVehicles = query({
     query: v.optional(v.string()),
   },
   handler: async (ctx, args): Promise<CustomResponse<any>> => {
-    const user = await ctx.auth.getUserIdentity();
-    if (!user) {
-      return failure('Not authenticated', ErrorCodes.UNAUTHORIZED);
-    }
-
-    const userProfile = await ctx.db
-      .query('users')
-      .withIndex('by_email', (q) => q.eq('email', user.email!))
-      .unique();
-
-    if (!userProfile) {
-      return failure('User profile not found', ErrorCodes.NOT_FOUND);
-    }
-
-    const parking = await ctx.db
-      .query('parkings')
-      .withIndex('by_userId', (q) => q.eq('userId', userProfile._id))
-      .unique();
-
-    if (!parking) {
-      return failure(
-        'This account is not associated to a parking',
-        ErrorCodes.FORBIDDEN,
-      );
-    }
+    const result = await getClientUserAndParking(ctx);
+    if ('error' in result) return result.error;
 
     const now = Date.now();
-
-    let vehicles;
-    if (args.query) {
-      vehicles = await ctx.db
-        .query('vehicles')
-        .withSearchIndex('by_reference_search', (q) =>
-          q.search('reference', args.query!).eq('parkingId', parking._id),
-        )
-        .collect();
-    } else {
-      vehicles = await ctx.db
-        .query('vehicles')
-        .withIndex('by_parkingId', (q) => q.eq('parkingId', parking._id))
-        .filter((q) => q.gte(q.field('leaveDate'), now))
-        .order('desc')
-        .collect();
-    }
+    const vehicles = args.query
+      ? await ctx.db
+          .query('vehicles')
+          .withSearchIndex('by_reference_search', (q) =>
+            q.search('reference', args.query!).eq('parkingId', result.parking._id),
+          )
+          .collect()
+      : await ctx.db
+          .query('vehicles')
+          .withIndex('by_parkingId', (q) => q.eq('parkingId', result.parking._id))
+          .filter((q) => q.gte(q.field('leaveDate'), now))
+          .order('desc')
+          .collect();
 
     return success(vehicles);
   },
@@ -336,36 +384,12 @@ export const getMyVehicles = query({
 export const getMyVehicleById = query({
   args: { id: v.id('vehicles') },
   handler: async (ctx, args): Promise<CustomResponse<any>> => {
-    const user = await ctx.auth.getUserIdentity();
-    if (!user) {
-      return failure('Not authenticated', ErrorCodes.UNAUTHORIZED);
-    }
-
-    const userProfile = await ctx.db
-      .query('users')
-      .withIndex('by_email', (q) => q.eq('email', user.email!))
-      .unique();
-
-    if (!userProfile) {
-      return failure('User profile not found', ErrorCodes.NOT_FOUND);
-    }
-
-    const parking = await ctx.db
-      .query('parkings')
-      .withIndex('by_userId', (q) => q.eq('userId', userProfile._id))
-      .unique();
-
-    if (!parking) {
-      return failure('Parking not found for this user', ErrorCodes.NOT_FOUND);
-    }
+    const result = await getClientUserAndParking(ctx);
+    if ('error' in result) return result.error;
 
     const vehicle = await ctx.db.get(args.id);
-
-    if (!vehicle || vehicle.parkingId !== parking._id) {
-      return failure(
-        'Vehicle not found or access denied',
-        ErrorCodes.FORBIDDEN,
-      );
+    if (!vehicle || vehicle.parkingId !== result.parking._id) {
+      return failure('Vehicle not found or access denied', ErrorCodes.FORBIDDEN);
     }
 
     return success(vehicle);
@@ -379,37 +403,23 @@ export const createMyVehicle = mutation({
     leaveDate: v.number(),
     joinDate: v.number(),
   },
-  handler: async (
-    ctx,
-    args,
-  ): Promise<CustomResponse<{ vehicleId: string }>> => {
-    const user = await ctx.auth.getUserIdentity();
-    if (!user) {
-      return failure('Not authenticated', ErrorCodes.UNAUTHORIZED);
-    }
+  handler: async (ctx, args): Promise<CustomResponse<{ vehicleId: string }>> => {
+    const result = await getClientUserAndParking(ctx);
+    if ('error' in result) return result.error;
 
-    const userProfile = await ctx.db
-      .query('users')
-      .withIndex('by_email', (q) => q.eq('email', user.email!))
-      .unique();
-
-    if (!userProfile) {
-      return failure('User profile not found', ErrorCodes.NOT_FOUND);
-    }
-
-    const parking = await ctx.db
-      .query('parkings')
-      .withIndex('by_userId', (q) => q.eq('userId', userProfile._id))
-      .unique();
-
-    if (!parking) {
-      return failure('Parking not found for this user', ErrorCodes.NOT_FOUND);
+    try {
+      await checkParkingCapacity(ctx, result.parking._id);
+    } catch (e) {
+      if (e instanceof ConvexError) {
+        return failure(e.data?.message ?? 'Parking capacity exceeded', ErrorCodes.CONFLICT);
+      }
+      throw e;
     }
 
     const vehicleId = await ctx.db.insert('vehicles', {
       ...args,
-      parkingId: parking._id,
-      organizationId: parking.organizationId ?? undefined,
+      parkingId: result.parking._id,
+      organizationId: result.parking.organizationId ?? undefined,
     });
 
     return success({ vehicleId });
@@ -424,40 +434,13 @@ export const updateMyVehicle = mutation({
     leaveDate: v.optional(v.number()),
     joinDate: v.optional(v.number()),
   },
-  handler: async (
-    ctx,
-    { id, ...rest },
-  ): Promise<CustomResponse<{ success: boolean }>> => {
-    const user = await ctx.auth.getUserIdentity();
-    if (!user) {
-      return failure('Not authenticated', ErrorCodes.UNAUTHORIZED);
-    }
-
-    const userProfile = await ctx.db
-      .query('users')
-      .withIndex('by_email', (q) => q.eq('email', user.email!))
-      .unique();
-
-    if (!userProfile) {
-      return failure('User profile not found', ErrorCodes.NOT_FOUND);
-    }
-
-    const parking = await ctx.db
-      .query('parkings')
-      .withIndex('by_userId', (q) => q.eq('userId', userProfile._id))
-      .unique();
-
-    if (!parking) {
-      return failure('Parking not found for this user', ErrorCodes.NOT_FOUND);
-    }
+  handler: async (ctx, { id, ...rest }): Promise<CustomResponse<{ success: boolean }>> => {
+    const result = await getClientUserAndParking(ctx);
+    if ('error' in result) return result.error;
 
     const vehicle = await ctx.db.get(id);
-
-    if (!vehicle || vehicle.parkingId !== parking._id) {
-      return failure(
-        'Vehicle not found or access denied',
-        ErrorCodes.FORBIDDEN,
-      );
+    if (!vehicle || vehicle.parkingId !== result.parking._id) {
+      return failure('Vehicle not found or access denied', ErrorCodes.FORBIDDEN);
     }
 
     await ctx.db.patch(id, rest);
@@ -468,36 +451,12 @@ export const updateMyVehicle = mutation({
 export const deleteMyVehicle = mutation({
   args: { id: v.id('vehicles') },
   handler: async (ctx, args): Promise<CustomResponse<{ success: boolean }>> => {
-    const user = await ctx.auth.getUserIdentity();
-    if (!user) {
-      return failure('Not authenticated', ErrorCodes.UNAUTHORIZED);
-    }
-
-    const userProfile = await ctx.db
-      .query('users')
-      .withIndex('by_email', (q) => q.eq('email', user.email!))
-      .unique();
-
-    if (!userProfile) {
-      return failure('User profile not found', ErrorCodes.NOT_FOUND);
-    }
-
-    const parking = await ctx.db
-      .query('parkings')
-      .withIndex('by_userId', (q) => q.eq('userId', userProfile._id))
-      .unique();
-
-    if (!parking) {
-      return failure('Parking not found for this user', ErrorCodes.NOT_FOUND);
-    }
+    const result = await getClientUserAndParking(ctx);
+    if ('error' in result) return result.error;
 
     const vehicle = await ctx.db.get(args.id);
-
-    if (!vehicle || vehicle.parkingId !== parking._id) {
-      return failure(
-        'Vehicle not found or access denied',
-        ErrorCodes.FORBIDDEN,
-      );
+    if (!vehicle || vehicle.parkingId !== result.parking._id) {
+      return failure('Vehicle not found or access denied', ErrorCodes.FORBIDDEN);
     }
 
     await ctx.db.delete(args.id);

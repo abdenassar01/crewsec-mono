@@ -73,6 +73,7 @@ export default function UpdateParking() {
                 location: formData.location,
                 website: formData.website || '',
                 address: formData.address || '',
+                maxCapacity: formData.maxCapacity ? parseInt(formData.maxCapacity, 10) : undefined,
                 imageStorageId: formData.image as any,
               });
             }}
