@@ -88,7 +88,9 @@ export function ParkingForm({ onSubmit, defaultValues, isPending }: ParkingFormP
         email: userData.email ?? "",
         name: userData.name ?? "",
         phone: userData.phone ?? "",
-        role: userData.role ?? "CLIENT",
+        role: (["CLIENT", "EMPLOYEE", "ADMIN"].includes(userData.role)
+          ? userData.role
+          : "CLIENT") as "CLIENT" | "EMPLOYEE" | "ADMIN",
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

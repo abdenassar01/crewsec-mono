@@ -21,7 +21,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
           {children}
         </AuthLayoutProvider>
 
-        <Toaster richColors />
+        <Toaster />
       </ThemeProvider>
     </ConvexClientProvider>
   );

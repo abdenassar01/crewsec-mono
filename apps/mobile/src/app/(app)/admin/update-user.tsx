@@ -67,7 +67,7 @@ export default function UpdateParking() {
                 email: formData.email,
                 name: formData.name,
                 phone: formData.phone,
-                role: formData.role || 'CLIENT',
+                role: (formData.role || 'CLIENT') as "CLIENT" | "EMPLOYEE" | "ADMIN",
                 parkingName: formData.parkingName,
                 description: formData.description,
                 location: formData.location,

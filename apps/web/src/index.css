@@ -199,7 +199,7 @@ body {
 }
 
 @layer base {
-  * {
+  *:not([data-sonner-toast]):not([data-sonner-toast] *) {
     @apply border-border outline-ring/50;
   }
   body {

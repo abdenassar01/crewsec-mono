@@ -13,7 +13,7 @@ import {
 } from '@/components/core';
 import { View } from '@/components/ui';
 
-type UserRole = 'ADMIN' | 'EMPLOYEE' | 'CLIENT' | null;
+type UserRole = 'ADMIN' | 'EMPLOYEE' | 'CLIENT' | 'SUPER_ADMIN' | null;
 
 export default function AddUser() {
   const { t } = useTranslation();

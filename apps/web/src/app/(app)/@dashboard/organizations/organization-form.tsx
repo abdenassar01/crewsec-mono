@@ -20,7 +20,7 @@ type OrganizationFormProps = {
 const orgSchema = z.object({
   name: z.string().min(1, "Name is required"),
   description: z.string().optional(),
-  email: z.string().email("Invalid email address").optional().or(z.literal("")),
+  email: z.union([z.string().email("Invalid email address"), z.literal("")]),
   phone: z.string().optional(),
   address: z.string().optional(),
   website: z.string().optional(),
