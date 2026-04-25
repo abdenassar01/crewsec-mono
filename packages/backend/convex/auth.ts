@@ -57,6 +57,7 @@ export const createAuth = (
     cors: {
       origin: [
         siteUrl,
+        'https://app.crewsec.se',
         'crewsec://',
         'crewsec-prod://',
         'crewsec-staging://',
@@ -81,6 +82,7 @@ export const createAuth = (
     },
     trustedOrigins: [
       siteUrl,
+      'https://app.crewsec.se',
       'crewsec://',
       'crewsec-prod://',
       'crewsec-staging://',
