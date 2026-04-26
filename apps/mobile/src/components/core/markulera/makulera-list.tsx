@@ -154,8 +154,6 @@ export function MakuleraList() {
                     </Text>
                   </View>
                 </View>
-
-                {/* Action Buttons */}
                 <View className="flex-row items-center gap-2">
                   <MakuleraResolveSheet
                     id={item._id}

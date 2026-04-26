@@ -25,7 +25,7 @@ const clientParkingFormSchema = z.object({
   parkingName: z.string().min(1, 'Parking name is required'),
   description: z.string().min(1, 'Description is required'),
   location: z.string().min(1, 'Location is required'),
-  website: z.string().url('Invalid website URL'),
+  website: z.string().url('Invalid website URL').or(z.literal('')).optional(),
   address: z.string().min(1, 'Address is required'),
   maxCapacity: z.string().optional(),
   image: z.string().optional(),
@@ -86,7 +86,7 @@ export function ClientParkingForm({
         );
         break;
       case 2:
-        trigger(['image', 'parkingName', 'website', 'description'])
+        trigger(['parkingName', 'website', 'description'])
           .then((valid) => valid && setCurrentStep((prev) => prev + 1))
           .catch((e) => console.log('Not Valid: ', e));
         break;

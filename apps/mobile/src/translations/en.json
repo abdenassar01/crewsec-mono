@@ -111,7 +111,7 @@
     "dashboard": "Admin Dashboard",
     "location": "Location on google maps",
     "parking": "Parking",
-    "alarm": "Report Disturbance",
+    "alarm": "Alarm",
     "restorer": "New Car"
   },
   "admin": {

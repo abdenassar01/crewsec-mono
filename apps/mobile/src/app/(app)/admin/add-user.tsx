@@ -70,10 +70,11 @@ export default function AddUser() {
         parkingName: data.parkingName,
         parkingDescription: data.description,
         parkingLocation: data.location,
-        parkingWebsite: data.website,
+        parkingWebsite: data.website || '',
         parkingAddress: data.address,
         maxCapacity: data.maxCapacity ? parseInt(data.maxCapacity, 10) : undefined,
         imageStorageId: data.image || undefined,
+        organizationId: data.organizationId || undefined,
       });
 
       showMessage({

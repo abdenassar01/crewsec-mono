@@ -4,6 +4,7 @@ import {
   useQuery as useConvexQuery,
 } from 'convex/react';
 import type { FunctionReference, OptionalRestArgs } from 'convex/server';
+import type { OptionalRestArgsOrSkip } from 'convex/react';
 import { useCallback, useEffect, useRef } from 'react';
 
 import { showErrorMessage } from '@/components/ui/utils';
@@ -124,9 +125,9 @@ type ExtractDataType<T> = T extends { data: infer U; error: any }
  */
 export function useSafeQuery<T extends FunctionReference<'query'>>(
   queryReference: T,
-  ...args: OptionalRestArgs<T>
+  ...args: OptionalRestArgsOrSkip<T>
 ): ExtractDataType<T['_returnType']> | null | undefined {
-  const result = useConvexQuery(queryReference, ...args);
+  const result = useConvexQuery(queryReference, ...(args as OptionalRestArgs<T>));
   const lastErrorRef = useRef<string | null>(null);
 
   useEffect(() => {

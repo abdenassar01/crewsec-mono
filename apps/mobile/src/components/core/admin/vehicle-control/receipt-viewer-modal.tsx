@@ -2,6 +2,7 @@
 import { api } from 'convex/_generated/api';
 import { type Id } from 'convex/_generated/dataModel';
 import { useSafeQuery, useSafeMutation } from '@/hooks/use-convex-hooks';
+import { useConvex } from 'convex/react';
 import * as FileSystem from 'expo-file-system';
 import { Image } from 'react-native';
 import React, { useRef, useState } from 'react';
@@ -53,9 +54,10 @@ export function ReceiptViewerModal({ control }: Props) {
   });
 
   const generateUploadUrl = useSafeMutation(api.storage.generateUploadUrl);
-  const getUrl = useSafeMutation(api.storage.getUrl);
 
   const createControlFee = useSafeMutation(api.controlFees.create);
+
+  const convex = useConvex();
 
   const handlePrintAndSubmit = async () => {
     const user = getUser();
@@ -109,7 +111,7 @@ export function ReceiptViewerModal({ control }: Props) {
 
         if (storageId) {
           try {
-            const remoteUrl = await getUrl({ storageId });
+            const remoteUrl = await convex.query(api.storage.getUrl, { storageId });
             if (remoteUrl) {
               await BLEPrinter.printImage(remoteUrl);
               showMessage({ message: 'Printing started...', type: 'info' });

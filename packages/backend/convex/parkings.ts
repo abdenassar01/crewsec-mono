@@ -20,8 +20,10 @@ import { type CustomResponse, ErrorCodes, failure, success } from './util';
 export const list = query({
   args: { query: v.optional(v.string()) },
   handler: async (ctx, args) => {
-    const user = await requireAdmin(ctx);
+    const user = await getAuthenticatedUser(ctx);
     const orgId = getOrganizationId(user);
+
+    if(user?.role === "CLIENT") return success([]);
 
     let parkings: Doc<'parkings'>[] = [];
 
