@@ -6,9 +6,10 @@ import { Text, View } from '@/components/ui';
 
 interface Props {
   name: string;
+  organizationLogo?: string;
 }
 
-export function HomeHeader({ name }: Props) {
+export function HomeHeader({ name, organizationLogo }: Props) {
   const colorScheme = useColorScheme();
 
   return (
@@ -22,7 +23,9 @@ export function HomeHeader({ name }: Props) {
       <Image
         className="h-[40px] w-[150px]"
         source={
-          colorScheme === 'dark'
+          organizationLogo
+            ? {uri: organizationLogo}
+            : colorScheme === 'dark'
             ? require('assets/icons/dark/logo.png')
             : require('assets/icons/light/logo.png')
         }

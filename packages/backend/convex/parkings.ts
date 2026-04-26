@@ -88,7 +88,12 @@ export const getMyParking = query({
       ? (await ctx.storage.getUrl(parking.imageStorageId)) || ''
       : '';
 
-    return success({ parking: { ...parking, imageUrl }, user });
+    if (!parking.organizationId) return success({ parking: { ...parking, imageUrl }, user });
+
+    const organization = await ctx.db.get(parking.organizationId);
+    if (!organization) return success({ parking: { ...parking, imageUrl }, user });
+
+    return success({ parking: { ...parking, imageUrl, organization }, user });
   },
 });
 

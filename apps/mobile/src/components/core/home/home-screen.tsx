@@ -56,10 +56,11 @@ export function HomeScreen() {
           Linking.openURL(parking?.website || 'https://crewsec.se/'),
       },
       {
-        name: 'Crewsec',
+        name: parking?.organization?.name || 'CREWSEC',
         icon: require('assets/icons/light/web.png'),
         darkIcon: require('assets/icons/dark/web.png'),
-        href: () => Linking.openURL('https://crewsec.se/'),
+        onClick: () =>
+          Linking.openURL(parking?.organization?.website || 'https://crewsec.se/'),
       },
     ],
   ];
@@ -68,7 +69,10 @@ export function HomeScreen() {
 
   return (
     <>
-      <HomeHeader name={parking.name || 'CREWSEC'} />
+      <HomeHeader
+        name={parking?.name || 'CREWSEC'}
+        organizationLogo={parking?.organization?.logo}
+      />
       <View className="container mt-2">
         <Image
           className="z-10 my-3 aspect-video border border-secondary/10 w-full flex-1 rounded-3xl object-fill"
