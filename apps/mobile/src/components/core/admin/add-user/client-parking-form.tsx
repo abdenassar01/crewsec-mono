@@ -29,7 +29,7 @@ const clientParkingFormSchema = z.object({
   address: z.string().min(1, 'Address is required'),
   maxCapacity: z.string().optional(),
   image: z.string().optional(),
-  role: z.enum(['ADMIN', 'EMPLOYEE', 'CLIENT', 'SUPER_ADMIN']).default('CLIENT'),
+  role: z.enum(['ADMIN', 'EMPLOYEE', 'CLIENT']).default('CLIENT'),
   organizationId: z.string().optional(),
 });
 

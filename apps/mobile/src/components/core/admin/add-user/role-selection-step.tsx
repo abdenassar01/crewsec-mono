@@ -6,7 +6,7 @@ import { Image, Text, TouchableOpacity } from '@/components/ui';
 import { useSelectedTheme } from '@/lib';
 
 interface Props {
-  onRoleSelect: (role: 'ADMIN' | 'EMPLOYEE' | 'CLIENT' | 'SUPER_ADMIN') => void;
+  onRoleSelect: (role: 'ADMIN' | 'EMPLOYEE' | 'CLIENT') => void;
 }
 
 export function RoleSelectionStep({ onRoleSelect }: Props) {
@@ -32,14 +32,6 @@ export function RoleSelectionStep({ onRoleSelect }: Props) {
         : require('assets/icons/light/user.png'),
     },
     {
-      key: 'SUPER_ADMIN',
-      title: t('add-user.roles.super-admin.title'),
-      description: t('add-user.roles.super-admin.description'),
-      icon: isDark
-        ? require('assets/icons/dark/admin.png')
-        : require('assets/icons/light/admin.png'),
-    },
-    {
       key: 'CLIENT',
       title: t('add-user.roles.client.title'),
       description: t('add-user.roles.client.description'),
@@ -63,14 +55,13 @@ export function RoleSelectionStep({ onRoleSelect }: Props) {
           <TouchableOpacity
             key={role.key}
             onPress={() =>
-              onRoleSelect(role.key as 'ADMIN' | 'EMPLOYEE' | 'CLIENT' | 'SUPER_ADMIN')
+              onRoleSelect(role.key as 'ADMIN' | 'EMPLOYEE' | 'CLIENT')
             }
             className="w-1/3 items-center gap-4 rounded-xl bg-white p-2 dark:bg-background-secondary-dark"
           >
             <Image
               source={role.icon}
               className="size-12 rounded-lg bg-secondary/10 p-3 dark:bg-primary/10"
-              contentFit="contain"
             />
             <View className="">
               <Text className="text-center !text-xxs font-bold text-secondary dark:text-yellow-400">
