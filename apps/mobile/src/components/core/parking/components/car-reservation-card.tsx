@@ -10,6 +10,7 @@ import { Image, Text, TouchableOpacity, useModal, View } from '@/components/ui';
 import { Modal } from '@/components/ui/modal';
 
 import { CarParkingReservationModal } from './car-parking-reservation-modal';
+import { ControlFeeFromCardModal } from './control-fee-from-card-modal';
 import { EditItemSheet } from './edit-item-sheet';
 import { danger, secondary, success } from '@/components/ui/colors';
 
@@ -36,6 +37,7 @@ export function CarReservationCard({ vehicle }: Props) {
   const colorScheme = useColorScheme();
   const { t } = useTranslation();
   const { ref, present } = useModal();
+  const controlFeeModal = useModal();
   const [openEditModal, setOpenEditModal] = useState<boolean>(false);
 
   const parking = vehicle.parking;
@@ -64,6 +66,11 @@ export function CarReservationCard({ vehicle }: Props) {
           openEdit={() => setOpenEditModal(true)}
         />
       </Modal>
+      <ControlFeeFromCardModal
+        modalRef={controlFeeModal.ref}
+        vehicle={vehicle}
+        reference={vehicle.reference}
+      />
       <TouchableOpacity
         onPress={present}
         className="w-full overflow-hidden rounded-2xl bg-background-secondary dark:bg-background-secondary-dark"
@@ -77,6 +84,15 @@ export function CarReservationCard({ vehicle }: Props) {
               {vehicle.reference.toUpperCase()}
             </Text>
           </View>
+          <TouchableOpacity
+            onPress={(e) => {
+              e.stopPropagation();
+              controlFeeModal.present();
+            }}
+            className="mr-2 items-center justify-center rounded-full bg-white/20 px-3 py-1.5"
+          >
+            <Ionicons name="document-text-outline" size={16} color="white" />
+          </TouchableOpacity>
           <View
             className={`size-9 items-center justify-center rounded-full ${isActive ? 'bg-green-500' : 'bg-gray-400'}`}
           >
