@@ -178,7 +178,7 @@ export function ControlledInput<T extends FieldValues>(
       autoCapitalize="none"
       onChangeText={field.onChange}
       onBlur={field.onBlur}
-      value={(field.value as string) || ''}
+      value={(field.value ?? '') as string}
       {...inputProps}
       error={fieldState.error?.message}
     />

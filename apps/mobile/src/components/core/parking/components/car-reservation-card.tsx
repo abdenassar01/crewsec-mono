@@ -66,105 +66,114 @@ export function CarReservationCard({ vehicle }: Props) {
       </Modal>
       <TouchableOpacity
         onPress={present}
-        className="w-full rounded-2xl bg-background-secondary p-3 dark:bg-background-secondary-dark"
+        className="w-full overflow-hidden rounded-2xl bg-background-secondary dark:bg-background-secondary-dark"
       >
-        <View className="flex-row items-center justify-between">
-          <View className="flex-row items-center overflow-hidden rounded-lg bg-background dark:bg-background-dark">
-            <View
-              className={`justify-end p-2 pt-4 ${isActive ? 'bg-green-600' : 'bg-blue-600'}`}
-            >
-              <Ionicons
-                name={isActive ? 'car-sport' : 'car-outline'}
-                size={16}
-                color="white"
-              />
-            </View>
-            <Text className="pl-2 pr-3 text-center text-lg font-bold uppercase text-secondary dark:text-yellow-400">
-              {vehicle.reference}
+        <View className="flex-row items-center gap-3 bg-blue-600 px-4 py-3">
+          <View className="items-center justify-center rounded-lg border-2 border-blue-400 bg-blue-800 p-2">
+            <Text className="text-xl font-black text-yellow-400">S</Text>
+          </View>
+          <View className="flex-1">
+            <Text className="text-2xl font-black tracking-wider text-white">
+              {vehicle.reference.toUpperCase()}
             </Text>
           </View>
           <View
-            className={`rounded-full px-2 py-0.5 ${isActive ? 'bg-green-100 dark:bg-green-900/30' : 'bg-gray-100 dark:bg-gray-800'}`}
+            className={`size-9 items-center justify-center rounded-full ${isActive ? 'bg-green-500' : 'bg-gray-400'}`}
           >
-            <Text
-              className={`!text-[10px] font-semibold ${isActive ? 'text-green-700 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}
-            >
-              {isActive ? t('manage-parking.time-left') : t('forms.finished')}
-            </Text>
+            <Ionicons
+              name={isActive ? 'checkmark-circle' : 'alert-circle'}
+              size={20}
+              color="white"
+            />
           </View>
         </View>
 
-        {parking && (
-          <View className="mt-2 flex-row items-center gap-1.5">
-            <Image
-              className="size-3.5"
-              source={
-                colorScheme === 'dark'
-                  ? require('assets/icons/dark/security.png')
-                  : require('assets/icons/light/security.png')
-              }
-            />
-            <Text className="text-xs font-medium text-text dark:text-gray-200">
-              {parking.name}
-            </Text>
-            {parking.address && (
-              <Text className="text-[10px] text-gray-400">
-                - {parking.address}
+        <View className="p-3">
+          <View className="flex-row items-center justify-between">
+            <View className="flex-row items-center gap-2">
+              <View
+                className={`size-2 rounded-full ${isActive ? 'bg-green-500' : 'bg-gray-400'}`}
+              />
+              <Text
+                className={`text-sm font-medium ${isActive ? 'text-green-700 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}
+              >
+                {isActive ? t('manage-parking.time-left') : t('forms.finished')}
               </Text>
-            )}
-          </View>
-        )}
-
-        <View className="mt-2 gap-1.5">
-          <View className="flex-row items-center gap-2">
-            <Ionicons name="arrow-up" size={11} color={success[500]} />
-            <DateTimeFormatter time={vehicle.joinDate} className="text-[10px]" />
-            {vehicle.leaveDate && (
-              <>
-                <Ionicons name="arrow-down" size={11} color={danger[500]} />
-                <DateTimeFormatter
-                  time={vehicle.leaveDate}
-                  className="text-[10px]"
-                />
-              </>
-            )}
+            </View>
           </View>
 
-          {(durationDays > 0 || durationHours > 0) && (
-            <View className="flex-row items-center gap-1.5">
-              <Ionicons name="time-outline" size={11} color={secondary[500]} />
+          {parking && (
+            <View className="mt-2 flex-row items-center gap-1.5">
+              <Image
+                className="size-3.5"
+                source={
+                  colorScheme === 'dark'
+                    ? require('assets/icons/dark/security.png')
+                    : require('assets/icons/light/security.png')
+                }
+              />
+              <Text className="text-xs font-medium text-text dark:text-gray-200">
+                {parking.name}
+              </Text>
+              {parking.address && (
+                <Text className="text-[10px] text-gray-400">
+                  - {parking.address}
+                </Text>
+              )}
+            </View>
+          )}
+
+          <View className="mt-2 gap-1.5">
+            <View className="flex-row items-center gap-2">
+              <Ionicons name="arrow-up" size={11} color={success[500]} />
+              <DateTimeFormatter time={vehicle.joinDate} className="text-[10px]" />
+              {vehicle.leaveDate && (
+                <>
+                  <Ionicons name="arrow-down" size={11} color={danger[500]} />
+                  <DateTimeFormatter
+                    time={vehicle.leaveDate}
+                    className="text-[10px]"
+                  />
+                </>
+              )}
+            </View>
+
+            {(durationDays > 0 || durationHours > 0) && (
+              <View className="flex-row items-center gap-1.5">
+                <Ionicons name="time-outline" size={11} color={secondary[500]} />
+                <Text className="text-[10px] text-gray-500 dark:text-gray-400">
+                  {durationDays > 0
+                    ? t('manage-parking.days', { nbr: durationDays })
+                    : `${durationHours}h`}
+                </Text>
+              </View>
+            )}
+          </View>
+
+          {parking?.workingHours && parking.workingHours.length > 0 && todayHours && (
+            <View className="mt-2 flex-row items-center gap-1.5 rounded-lg bg-background px-2 py-1 dark:bg-background-dark">
+              <Ionicons
+                name="today-outline"
+                size={10}
+                color={colorScheme === 'dark' ? '#facc15' : secondary[500]}
+              />
               <Text className="text-[10px] text-gray-500 dark:text-gray-400">
-                {durationDays > 0
-                  ? t('manage-parking.days', { nbr: durationDays })
-                  : `${durationHours}h`}
+                {todayHours.closed
+                  ? t('parking-info.closed')
+                  : `${todayHours.open} - ${todayHours.close}`}
+              </Text>
+            </View>
+          )}
+
+          {parking?.maxCapacity && (
+            <View className="mt-1 flex-row items-center gap-1.5">
+              <Ionicons name="grid-outline" size={10} color="#9ca3af" />
+              <Text className="text-[10px] text-gray-400">
+                {t('forms.capacity')}: {parking.maxCapacity}
               </Text>
             </View>
           )}
         </View>
-
-        {parking?.workingHours && parking.workingHours.length > 0 && todayHours && (
-          <View className="mt-2 flex-row items-center gap-1.5 rounded-lg bg-background px-2 py-1 dark:bg-background-dark">
-            <Ionicons
-              name="today-outline"
-              size={10}
-              color={colorScheme === 'dark' ? '#facc15' : secondary[500]}
-            />
-            <Text className="text-[10px] text-gray-500 dark:text-gray-400">
-              {todayHours.closed
-                ? t('parking-info.closed')
-                : `${todayHours.open} - ${todayHours.close}`}
-            </Text>
-          </View>
-        )}
-
-        {parking?.maxCapacity && (
-          <View className="mt-1 flex-row items-center gap-1.5">
-            <Ionicons name="grid-outline" size={10} color="#9ca3af" />
-            <Text className="text-[10px] text-gray-400">
-              {t('forms.capacity')}: {parking.maxCapacity}
-            </Text>
-          </View>
-        )}
       </TouchableOpacity>
     </>
   );
