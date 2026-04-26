@@ -8,20 +8,17 @@ export function LanguageSelector() {
   const { language, setLanguage } = useSelectedLanguage();
 
   return (
-    <View className="flex-row rounded-full border border-secondary p-px dark:border-primary">
+    <View className="flex-row rounded-full border border-secondary/10 p-0.5">
       <TouchableOpacity
         onPress={() => setLanguage('en')}
         className={cn(
-          'rounded-full w-[30px] aspect-square flex justify-center items-center',
-          language === 'en' ? 'dark:bg-primary bg-secondary' : '',
+          'rounded-full w-7 aspect-square flex justify-center items-center p-1',
+          language === 'en' ? 'bg-secondary/10' : '',
         )}
       >
         <Text
           className={cn(
-            'dark:text-text text-[10px]',
-            language !== 'en'
-              ? 'text-text dark:text-gray-100'
-              : 'text-textdark',
+            'dark:text-text text-[10px] text-secondary!',
           )}
         >
           EN
@@ -30,16 +27,13 @@ export function LanguageSelector() {
       <TouchableOpacity
         onPress={() => setLanguage('sw')}
         className={cn(
-          'rounded-full w-[30px] aspect-square flex justify-center items-center',
-          language === 'sw' ? 'dark:bg-primary bg-secondary' : '',
+          'rounded-full w-7 aspect-square flex justify-center items-center p-1',
+          language === 'sw' ? 'bg-secondary/10' : '',
         )}
       >
         <Text
           className={cn(
-            'dark:text-text text-[10px]',
-            language !== 'sw'
-              ? 'text-text dark:text-gray-100'
-              : 'text-textdark',
+            'dark:text-text text-[10px] text-secondary!',
           )}
         >
           SW
