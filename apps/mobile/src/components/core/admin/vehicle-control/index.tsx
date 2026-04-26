@@ -15,6 +15,8 @@ import { Image, Text } from '@/components/ui';
 import { useVehicleControlSession } from '@/contexts/vehicle-control-session-context';
 import { cn } from '@/lib';
 import { type ReferenceEntry } from '@/services/vehicle-control-storage';
+import { getUser } from '@/lib/storage/user-storage';
+import { referencesStorage, referenceDetailsStorage } from '@/services/vehicle-control-storage';
 
 import { LocationsView } from './locations-view';
 import { ReferenceDetailScreen } from './reference-detail-screen';
@@ -25,7 +27,11 @@ import { Dimensions } from 'react-native';
 
 type ViewType = 'locations' | 'towns' | 'town-detail' | 'reference-detail';
 
-export function VehicleControlOffline() {
+interface VehicleControlOfflineProps {
+  initialReference?: string;
+}
+
+export function VehicleControlOffline({ initialReference }: VehicleControlOfflineProps) {
   const { session, sessionStartTime, startSession, isSessionActive } =
     useVehicleControlSession();
   const colorScheme = useColorScheme();
@@ -52,6 +58,42 @@ export function VehicleControlOffline() {
       setCurrentStep('towns');
     }
   }, []);
+
+  useEffect(() => {
+    if (!initialReference || !selectedTownId || !selectedLocationId) return;
+    if (step !== 'town-detail') return;
+
+    const user = getUser();
+    if (!user?.userId) return;
+
+    const currentRefs = referencesStorage.getTownReferences(selectedTownId, user.userId);
+    const existingRefs = currentRefs?.references || [];
+    const normalizedRef = initialReference.trim().toUpperCase();
+
+    if (!existingRefs.some((r) => r.reference === normalizedRef)) {
+      const newRef = { reference: normalizedRef, createdAt: Date.now(), userId: user.userId };
+      referencesStorage.saveTownReferences(
+        selectedTownId,
+        selectedLocationId,
+        [...existingRefs, newRef],
+        user.userId,
+      );
+    }
+
+    const newEntry: ReferenceEntry = {
+      id: `${Date.now()}-${normalizedRef}`,
+      reference: normalizedRef,
+      locationId: selectedLocationId,
+      townId: selectedTownId,
+      galleryStorageIds: [],
+      isSignsChecked: false,
+      isPhotosTaken: false,
+      createdAt: Date.now(),
+      userId: user.userId,
+    };
+    setSelectedReference(newEntry);
+    setCurrentStep('reference-detail');
+  }, [initialReference, selectedTownId, selectedLocationId, step]);
 
   const getBackHandler = () => {
     switch (step) {

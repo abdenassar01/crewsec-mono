@@ -2,6 +2,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { FlashList } from '@shopify/flash-list';
 import { api } from 'convex/_generated/api';
+import { type Id } from 'convex/_generated/dataModel';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { showMessage } from 'react-native-flash-message';
@@ -20,15 +21,26 @@ import { useSafeMutation, useSafeQuery } from '@/hooks/use-convex-hooks';
 import { MakuleraResolveSheet } from './makulera-resolve-sheet';
 import { cn } from '@/lib';
 
+interface MakuleraItem {
+  _id: Id<'canceledViolations'>;
+  _creationTime: number;
+  reference: string;
+  resolved?: boolean;
+  parkingId: Id<'parkings'>;
+  cause: string;
+  organizationId?: string;
+  notes?: string;
+}
+
 export function MakuleraList() {
   const { t } = useTranslation();
   const data = useSafeQuery(api.canceledViolations.getByMyParkingIdAndCause, {
     cause: 'MAKULERA',
-  });
+  }) as MakuleraItem[] | null | undefined;
 
   const deleteMutation = useSafeMutation(api.canceledViolations.remove);
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: Id<'canceledViolations'>) => {
     try {
       await deleteMutation({ id });
       showMessage({
@@ -91,7 +103,7 @@ export function MakuleraList() {
             </Text>
           </View>
         ) : (
-          <FlashList
+          <FlashList<MakuleraItem>
             contentContainerClassName="gap-2 pb-20"
             data={data}
             keyExtractor={(item) => `makulera-${item._id}`}
@@ -101,7 +113,7 @@ export function MakuleraList() {
                 key={item._id}
                 className={cn(
                   'flex-row items-center gap-3 rounded-xl bg-background p-3 dark:bg-gray-900',
-                  item.resolved && 'opacity-60',
+                  item.resolved ? 'opacity-60' : undefined,
                 )}
               >
                 {/* Status Badge */}
@@ -147,7 +159,7 @@ export function MakuleraList() {
                 <View className="flex-row items-center gap-2">
                   <MakuleraResolveSheet
                     id={item._id}
-                    isResolved={item.resolved}
+                    isResolved={!!item.resolved}
                   />
                   <ConfirmationModal
                     title="Delete Makulera"

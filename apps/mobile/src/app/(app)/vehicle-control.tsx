@@ -1,7 +1,10 @@
+import { useLocalSearchParams } from 'expo-router';
 import React from 'react';
 
 import { VehicleControlOffline } from '@/components/core';
 
 export default function VehicleControl() {
-  return <VehicleControlOffline />;
+  const { reference } = useLocalSearchParams<{ reference?: string }>();
+
+  return <VehicleControlOffline initialReference={reference} />;
 }
