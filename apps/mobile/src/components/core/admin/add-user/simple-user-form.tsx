@@ -46,10 +46,10 @@ export function SimpleUserForm({
 
   const currentUser = useSafeQuery(api.users.getCurrentUserProfile);
   const organizations = useSafeQuery(api.organizations.list);
-  const isSuperAdmin = (currentUser as any)?.role === 'SUPER_ADMIN';
-  const orgList = (organizations as any[]) ?? [];
+  const isSuperAdmin = currentUser?.role === 'SUPER_ADMIN';
+  const orgList = organizations ?? [];
 
-  const orgOptions = orgList.map((org: any) => ({
+  const orgOptions = orgList.map((org: { name: string; _id: string }) => ({
     label: org.name,
     value: org._id,
   }));

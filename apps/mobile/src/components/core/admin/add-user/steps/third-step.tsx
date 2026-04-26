@@ -1,13 +1,12 @@
-import { type Control } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
-import { ControlledInput, Text, View } from '@/components/ui';
+import { type AnyControl, ControlledInput, Text, View } from '@/components/ui';
 
-interface Props<T extends Record<string, any>> {
-  control: Control<T>;
+interface Props {
+  control: AnyControl;
 }
 
-export function AddUserThirdStep<T extends Record<string, any>>({ control }: Props<T>) {
+export function AddUserThirdStep({ control }: Props) {
   const { t } = useTranslation();
 
   return (
@@ -19,13 +18,13 @@ export function AddUserThirdStep<T extends Record<string, any>>({ control }: Pro
         name="location"
         label={t('home.location')}
         placeholder={t('home.location')}
-        control={control as any}
+        control={control}
       />
       <ControlledInput
         name="address"
         label={t('forms.address')}
         placeholder={t('forms.address')}
-        control={control as any}
+        control={control}
       />
     </View>
   );

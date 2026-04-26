@@ -6,7 +6,6 @@ import {
 import { FlashList } from '@shopify/flash-list';
 import { useColorScheme } from 'react-native';
 import * as React from 'react';
-import type { FieldValues } from 'react-hook-form';
 import { useController } from 'react-hook-form';
 import { Platform, View } from 'react-native';
 import { Pressable, type PressableProps } from 'react-native';
@@ -17,7 +16,7 @@ import colors from '@/components/ui/colors';
 import { CaretDown } from '@/components/ui/icons';
 import { cn } from '@/lib';
 
-import type { InputControllerType } from './input';
+import { type AnyControl } from './input';
 import { useModal } from './modal';
 import { Modal } from './modal';
 import { Text } from './text';
@@ -155,8 +154,11 @@ export interface SelectProps {
   className?: string;
   wrapperClassName?: string;
 }
-interface ControlledSelectProps<T extends FieldValues>
-  extends SelectProps, InputControllerType<T> {}
+interface ControlledSelectProps extends SelectProps {
+  control: AnyControl;
+  name: string;
+  rules?: Record<string, unknown>;
+}
 
 export const Select = (props: SelectProps) => {
   const {
@@ -248,8 +250,8 @@ export const Select = (props: SelectProps) => {
   );
 };
 
-export function ControlledSelect<T extends FieldValues>(
-  props: ControlledSelectProps<T>,
+export function ControlledSelect(
+  props: ControlledSelectProps,
 ) {
   const { name, control, rules, onSelect: onNSelect, ...selectProps } = props;
 

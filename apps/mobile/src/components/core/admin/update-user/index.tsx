@@ -106,15 +106,14 @@ export function UpdateClientParkingForm({
     }
   }
 
-  const c = control as any;
   const getStep = () => {
     switch (currentStep) {
       case 1:
-        return <AddUserFirstStep control={c} />;
+        return <AddUserFirstStep control={control} />;
       case 2:
-        return <AddUserSecondStep control={c} />;
+        return <AddUserSecondStep control={control} />;
       case 3:
-        return <AddUserThirdStep control={c} />;
+        return <AddUserThirdStep control={control} />;
       default:
         return null;
     }

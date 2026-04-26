@@ -1,12 +1,11 @@
 import React from 'react';
-import { type Control } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 
-import { ControlledInput, Text } from '@/components/ui';
+import { type AnyControl, ControlledInput, Text } from '@/components/ui';
 
 interface AddUserFirstStepProps {
-  control: Control<any>;
+  control: AnyControl;
   update?: boolean;
 }
 

@@ -39,6 +39,7 @@ interface User {
   role: 'ADMIN' | 'EMPLOYEE' | 'CLIENT' | 'SUPER_ADMIN';
   enabled?: boolean;
   userId: string;
+  organizationId?: Id<'organizations'>;
 }
 
 interface Props {
@@ -52,10 +53,10 @@ export function UpdateUserForm({ onSubmit, user, pending = false }: Props) {
 
   const currentUser = useSafeQuery(api.users.getCurrentUserProfile);
   const organizations = useSafeQuery(api.organizations.list);
-  const isSuperAdmin = (currentUser as any)?.role === 'SUPER_ADMIN';
-  const orgList = (organizations as any[]) ?? [];
+  const isSuperAdmin = currentUser?.role === 'SUPER_ADMIN';
+  const orgList = organizations ?? [];
 
-  const orgOptions = orgList.map((org: any) => ({
+  const orgOptions = orgList.map((org: { name: string; _id: string }) => ({
     label: org.name,
     value: org._id,
   }));
@@ -73,7 +74,7 @@ export function UpdateUserForm({ onSubmit, user, pending = false }: Props) {
           ? user.role
           : 'EMPLOYEE',
       enabled: true,
-      organizationId: (user as any)?.organizationId || '',
+      organizationId: user?.organizationId || '',
     },
   });
 

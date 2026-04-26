@@ -14,12 +14,13 @@ import {
   Image,
   Text,
   TouchableOpacity,
+  type AnyControl,
   View,
 } from '@/components/ui';
 import { cn } from '@/lib/helpers';
 
 type Props = {
-  control: Control<any>;
+  control: AnyControl;
   name: string;
   defaultValue?: string;
   children?: ReactNode;

@@ -1,14 +1,15 @@
 import { Image } from 'react-native';
 import React, { useEffect } from 'react';
-import { type Control, useController, useWatch } from 'react-hook-form';
+import { useController, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator } from 'react-native';
 import { Text, View } from 'react-native';
 
+import { type AnyControl } from '@/components/ui';
 import { useCheckParking } from '@/hooks/use-easypark';
 
 interface Props {
-  control: Control<any>;
+  control: AnyControl;
   name: string;
 }
 

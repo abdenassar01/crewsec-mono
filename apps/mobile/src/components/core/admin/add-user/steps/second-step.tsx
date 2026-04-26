@@ -1,13 +1,12 @@
 import React from 'react';
-import { type Control } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 
 import { UploadAvatar } from '@/components/common';
-import { ControlledInput, Text } from '@/components/ui';
+import { type AnyControl, ControlledInput, Text } from '@/components/ui';
 
 interface Props {
-  control: Control<any>;
+  control: AnyControl;
 }
 
 export function AddUserSecondStep({ control }: Props) {

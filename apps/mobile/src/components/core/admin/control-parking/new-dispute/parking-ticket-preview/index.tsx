@@ -57,7 +57,7 @@ export const ParkingTicketPreview: React.FC<ParkingTicketPreviewProps> = ({
         <Image
           source={require('assets/splash-icon.png')}
           className="h-40 w-4/5 self-center"
-          contentFit="cover"
+          resizeMode="cover"
         />
 
         <Text className="my-6 border-t border-gray/60 pt-3 text-center text-xl font-bold text-black">

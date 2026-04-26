@@ -58,7 +58,7 @@ function WorkingHourRow({
       {isEditing && !isClosed && (
         <View className="mt-1.5 flex-row items-center gap-2">
           <ControlledInput
-            control={control as any}
+            control={control as unknown as Control<Record<string, unknown>>}
             name={`workingHours.${index}.open`}
             placeholder="08:00"
             keyboardType="number-pad"
@@ -66,7 +66,7 @@ function WorkingHourRow({
           />
           <Text className="text-xs text-gray-400">-</Text>
           <ControlledInput
-            control={control as any}
+            control={control as unknown as Control<Record<string, unknown>>}
             name={`workingHours.${index}.close`}
             placeholder="18:00"
             keyboardType="number-pad"

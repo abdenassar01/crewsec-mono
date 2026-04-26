@@ -1,6 +1,6 @@
 /* eslint-disable max-lines-per-function */
 import React, { useEffect } from 'react';
-import { type Control, useController } from 'react-hook-form';
+import { useController } from 'react-hook-form';
 import {
   ActivityIndicator,
   ScrollView,
@@ -14,10 +14,11 @@ import {
   type IBLEPrinter,
 } from 'react-native-thermal-receipt-printer-image-qr';
 
+import { type AnyControl } from '@/components/ui';
 import { cn, useBluetoothStatus } from '@/lib';
 
 interface Props {
-  control: Control<any>;
+  control: AnyControl;
 }
 
 export function PrinterSection({ control }: Props) {

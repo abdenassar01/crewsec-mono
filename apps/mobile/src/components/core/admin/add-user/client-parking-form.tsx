@@ -13,7 +13,8 @@ import { z } from 'zod';
 
 import { Button, ControlledSelect, Text } from '@/components/ui';
 import { api } from 'convex/_generated/api';
-import { useSafeQuery } from '@/hooks/use-convex-hooks';
+import { type Doc } from 'convex/_generated/dataModel';
+import { useSafeQuery, useSafeMutation } from '@/hooks/use-convex-hooks';
 
 import { AddUserFirstStep, AddUserSecondStep, AddUserThirdStep } from './steps';
 
@@ -51,10 +52,10 @@ export function ClientParkingForm({
 
   const currentUser = useSafeQuery(api.users.getCurrentUserProfile);
   const organizations = useSafeQuery(api.organizations.list);
-  const isSuperAdmin = (currentUser as any)?.role === 'SUPER_ADMIN';
-  const orgList = (organizations as any[]) ?? [];
+  const isSuperAdmin = currentUser?.role === 'SUPER_ADMIN';
+  const orgList = organizations ?? [];
 
-  const orgOptions = orgList.map((org: any) => ({
+  const orgOptions = orgList.map((org: { name: string; _id: string }) => ({
     label: org.name,
     value: org._id,
   }));
@@ -100,11 +101,11 @@ export function ClientParkingForm({
       case 1:
         return (
           <>
-            <AddUserFirstStep control={control as any} />
+            <AddUserFirstStep control={control} />
             {isSuperAdmin && orgOptions.length > 0 && (
               <ControlledSelect
                 label="Organization"
-                control={control as any}
+                control={control}
                 name="organizationId"
                 options={orgOptions}
                 placeholder="Select organization"
@@ -113,9 +114,9 @@ export function ClientParkingForm({
           </>
         );
       case 2:
-        return <AddUserSecondStep control={control as any} />;
+        return <AddUserSecondStep control={control} />;
       case 3:
-        return <AddUserThirdStep control={control as any} />;
+        return <AddUserThirdStep control={control} />;
       default:
         return null;
     }

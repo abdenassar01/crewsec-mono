@@ -1,6 +1,6 @@
 /* eslint-disable max-lines-per-function */
 import { api } from 'convex/_generated/api';
-import { type Doc } from 'convex/_generated/dataModel';
+import { type Doc, type Id } from 'convex/_generated/dataModel';
 import { useSafeQuery, useSafeMutation } from '@/hooks/use-convex-hooks';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -20,7 +20,7 @@ export default function AddMakulera() {
 
   // Get parking info
   const parking = useSafeQuery(api.parkings.getPublicParkingById, {
-    parkingId: parkingId as any,
+    parkingId: parkingId as Id<'parkings'>,
   }) as Doc<'parkings'> | null | undefined;
 
   // Create mutation
@@ -49,7 +49,7 @@ export default function AddMakulera() {
         reference: reference.trim(),
         cause: 'MAKULERA',
         resolved: false,
-        parkingId: parkingId as any,
+        parkingId: parkingId as Id<'parkings'>,
       });
 
       showMessage({

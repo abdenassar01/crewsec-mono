@@ -71,14 +71,20 @@ type TRule<T extends FieldValues> =
   | undefined;
 
 export type RuleType<T extends FieldValues> = { [name in keyof T]: TRule<T> };
-export type InputControllerType<T extends FieldValues> = {
-  name: Path<T>;
-  control: Control<any>;
-  rules?: RuleType<T>;
+export type InputControllerType = {
+  name: string;
+  control: AnyControl;
+  rules?: Record<string, unknown>;
 };
 
-interface ControlledInputProps<T extends FieldValues>
-  extends NInputProps, InputControllerType<T> {}
+// react-hook-form's Control<T> is invariant, so Control<SpecificForm> is not
+// assignable to Control<any>. We use a structural type that accepts any control
+// by matching only the methods we actually use (from useController).
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type AnyControl = { [K in keyof Control<any>]: Control<any>[K] };
+
+interface ControlledInputProps
+  extends NInputProps, InputControllerType {}
 
 export const Input = React.forwardRef<NTextInput, NInputProps>((props, ref) => {
   const { label, error, testID, wrapperClassName, ...inputProps } = props;
@@ -120,7 +126,8 @@ export const Input = React.forwardRef<NTextInput, NInputProps>((props, ref) => {
           onFocus={onFocus}
           {...inputProps}
           className={cn(styles.input(), inputProps.className)}
-          ref={ref as any}
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          ref={ref as never}
           style={StyleSheet.flatten([
             { writingDirection: I18nManager.isRTL ? 'rtl' : 'ltr' },
             { textAlign: I18nManager.isRTL ? 'right' : 'left' },
@@ -166,8 +173,8 @@ export const Input = React.forwardRef<NTextInput, NInputProps>((props, ref) => {
   );
 });
 
-export function ControlledInput<T extends FieldValues>(
-  props: ControlledInputProps<T>,
+export function ControlledInput(
+  props: ControlledInputProps,
 ) {
   const { name, control, rules, ...inputProps } = props;
 

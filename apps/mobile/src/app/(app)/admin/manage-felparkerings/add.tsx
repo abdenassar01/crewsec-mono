@@ -1,6 +1,6 @@
 /* eslint-disable max-lines-per-function */
 import { api } from 'convex/_generated/api';
-import { type Doc } from 'convex/_generated/dataModel';
+import { type Doc, type Id } from 'convex/_generated/dataModel';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { showMessage } from 'react-native-flash-message';
@@ -19,7 +19,7 @@ export default function AddFelparkering() {
   const [loading, setLoading] = useState(false);
 
   const parking = useSafeQuery(api.parkings.getPublicParkingById, {
-    parkingId: parkingId as any,
+    parkingId: parkingId as Id<'parkings'>,
   }) as Doc<'parkings'> | null | undefined;
 
   const createMutation = useSafeMutation(api.canceledViolations.create);
@@ -47,7 +47,7 @@ export default function AddFelparkering() {
         reference: reference.trim(),
         cause: 'FELPARKERING',
         resolved: false,
-        parkingId: parkingId as any,
+        parkingId: parkingId as Id<'parkings'>,
       });
 
       showMessage({

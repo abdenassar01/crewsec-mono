@@ -1,21 +1,19 @@
 /* eslint-disable max-lines-per-function */
-import { zodResolver } from '@hookform/resolvers/zod';
 import { api } from 'convex/_generated/api';
 import { type Id } from 'convex/_generated/dataModel';
 import { useSafeMutation } from '@/hooks/use-convex-hooks';
-import { Image } from 'react-native';
 import { useColorScheme } from 'react-native';
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { showMessage } from 'react-native-flash-message';
 import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
-import { z } from 'zod';
 
 import { DateTimePicker } from '@/components/common';
 import {
   Button,
   ControlledInput,
+  Image,
   ScrollView,
   Text,
   TouchableOpacity,
@@ -24,16 +22,12 @@ import {
 } from '@/components/ui';
 import { Modal } from '@/components/ui/modal';
 
-const vehicleSchema = z.object({
-  reference: z.string({ required_error: 'Reference is required' }),
-  name: z.string().optional(),
-  'leaveDate-date': z
-    .array(z.string())
-    .min(1, { message: 'Leave date is required' }),
-  'joinDate-date': z
-    .array(z.string())
-    .min(1, { message: 'Join date is required' }),
-});
+interface VehicleFormValues {
+  reference: string;
+  name?: string;
+  'leaveDate-date': string[];
+  'joinDate-date': string[];
+}
 
 interface Props {
   refresh?: () => void;
@@ -44,9 +38,7 @@ interface Props {
 export function AddItemSheet({ refresh, parkingId, isAdmin = false }: Props) {
   const colorScheme = useColorScheme();
   const { present, ref, dismiss } = useModal();
-  const { control, handleSubmit, reset } = useForm<any>({
-    resolver: zodResolver(vehicleSchema),
-  });
+  const { control, handleSubmit, reset } = useForm<VehicleFormValues>();
 
   const { t } = useTranslation();
   const addVehicleMutation = useSafeMutation(
@@ -54,7 +46,7 @@ export function AddItemSheet({ refresh, parkingId, isAdmin = false }: Props) {
   );
   const [isAdding, setIsAdding] = React.useState(false);
 
-  const mutate = async (params: { vehicle: any }) => {
+  const mutate = async (params: { vehicle: { reference: string; joinDate: string; leaveDate: string; name: string } }) => {
     if (!parkingId && isAdmin) {
       showMessage({ message: 'Parking ID is required', type: 'danger' });
       return;
@@ -83,11 +75,11 @@ export function AddItemSheet({ refresh, parkingId, isAdmin = false }: Props) {
     }
   };
 
-  const onSubmit = (vehicle: any) => {
+  const onSubmit = (formData: VehicleFormValues) => {
     try {
       // Validate that date arrays exist and have at least one element
-      const joinDateArray = vehicle['joinDate-date'];
-      const leaveDateArray = vehicle['leaveDate-date'];
+      const joinDateArray = formData['joinDate-date'];
+      const leaveDateArray = formData['leaveDate-date'];
 
       if (
         !joinDateArray ||
@@ -181,10 +173,10 @@ export function AddItemSheet({ refresh, parkingId, isAdmin = false }: Props) {
 
       mutate({
         vehicle: {
-          reference: vehicle.reference,
+          reference: formData.reference,
           joinDate: `${join.toISOString()}`,
           leaveDate: `${leave.toISOString()}`,
-          name: vehicle.reference || '',
+          name: formData.reference || '',
         },
       });
     } catch (error) {

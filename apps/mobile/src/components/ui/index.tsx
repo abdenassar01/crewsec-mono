@@ -14,7 +14,6 @@ export * from './text';
 export * from './confirmation-modal';
 export * from './utils';
 
-// export base components from react-native
 export {
   ActivityIndicator,
   Pressable,
@@ -25,8 +24,7 @@ export {
 } from 'react-native';
 export { SafeAreaView } from 'react-native-safe-area-context';
 
-//Apply styled to Svg to resolve className string into style
-const StyledSvg = styled(Svg, {
+export const StyledSvg = styled(Svg, {
   className: {
     target: 'style',
   },

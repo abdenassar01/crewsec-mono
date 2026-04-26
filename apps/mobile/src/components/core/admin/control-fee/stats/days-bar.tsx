@@ -2,12 +2,15 @@ import React from 'react';
 import { View } from 'react-native';
 import { LineChart } from 'react-native-gifted-charts';
 
-import { type APIResponse } from '@/api';
-import { type StateEntity } from '@/api/control-fee';
 import { Text } from '@/components/ui';
 
+interface StateEntity {
+  label: string;
+  value: number;
+}
+
 interface Props {
-  data?: APIResponse<StateEntity[]>;
+  data?: { data?: StateEntity[] };
 }
 
 export function DaysBar({ data }: Props) {

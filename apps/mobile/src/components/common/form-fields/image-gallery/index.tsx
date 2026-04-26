@@ -7,7 +7,7 @@ import React, { useState } from 'react';
 import { type Control, useFieldArray, useWatch } from 'react-hook-form';
 import { Image, TouchableOpacity, View } from 'react-native';
 
-import { Text } from '@/components/ui';
+import { type AnyControl } from '@/components/ui';
 import { cn } from '@/lib';
 import { useBatchUpload } from '@/utils/batch-upload';
 
@@ -22,7 +22,7 @@ type PhotoAsset = {
 };
 
 type Props = {
-  control: Control<any>;
+  control: AnyControl;
   name: string;
   className?: string;
   label: string;

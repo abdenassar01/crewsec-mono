@@ -1,49 +1,44 @@
 /* eslint-disable max-lines-per-function */
+import { type Doc } from 'convex/_generated/dataModel';
 import { Image } from 'react-native';
 import { useColorScheme } from 'react-native';
 import React, { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, type Control } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { showMessage } from 'react-native-flash-message';
 import { ScrollView } from 'react-native-gesture-handler';
 
-// import {
-//   type NewVehicle,
-//   useUpdateVehicle,
-//   type Vehicle,
-//   vehicleSchema,
-// } from '@/api';
 import { DateTimePicker } from '@/components/common';
 import { Button, ControlledInput, Text, useModal, View } from '@/components/ui';
 import { Modal } from '@/components/ui/modal';
+
+interface VehicleFormValues {
+  reference: string;
+  'leaveDate-date': string[];
+  'joinDate-date': string[];
+}
 
 export function EditItemSheet({
   open,
   vehicle,
 }: {
-  vehicle: any;
+  vehicle: Doc<'vehicles'>;
   open: boolean;
 }) {
   const colorScheme = useColorScheme();
   const { present, ref, dismiss } = useModal();
 
-  // const { mutate } = useUpdateVehicle({});
-
-  const { control, handleSubmit } = useForm<any>({
-    // resolver: zodResolver(vehicleSchema),
+  const { control, handleSubmit } = useForm<VehicleFormValues>({
     defaultValues: {
       reference: vehicle.reference,
-      // @ts-ignore
-      'leaveDate-date': new Date(vehicle.leaveDate).toLocaleDateString(
+      'leaveDate-date': [new Date(vehicle.leaveDate).toLocaleDateString(
         'en-us',
         { day: 'numeric', month: 'short', year: 'numeric' },
-      ),
-      // @ts-ignore
-      'joinDate-date': new Date(vehicle.joinDate).toLocaleDateString('en-us', {
+      )],
+      'joinDate-date': [new Date(vehicle.joinDate).toLocaleDateString('en-us', {
         day: 'numeric',
         month: 'short',
         year: 'numeric',
-      }),
+      })],
     },
   });
 
@@ -51,13 +46,13 @@ export function EditItemSheet({
 
   useEffect(() => (open ? present() : dismiss()), [dismiss, open, present]);
 
-  const onSubmit = (vehicle: any) => {
-    let leave = new Date(vehicle['leaveDate-date'][0]);
+  const onSubmit = (formData: VehicleFormValues) => {
+    let leave = new Date(formData['leaveDate-date'][0]);
     const time = new Date();
     leave.setHours(23);
     leave.setMinutes(59);
 
-    let join = new Date(vehicle['joinDate-date'][0]);
+    let join = new Date(formData['joinDate-date'][0]);
 
     const today = new Date();
     today.setHours(time.getHours());
@@ -66,23 +61,13 @@ export function EditItemSheet({
     const todayDateStr = today.toISOString().split('T')[0];
 
     if (joinDateStr < todayDateStr) {
+      const { showMessage } = require('react-native-flash-message');
       showMessage({
         message: t('forms.errors.start-date-error'),
         type: 'danger',
       });
       return;
     }
-
-    // mutate({
-    //   id: vehicle.id,
-    //   Vehicle: {
-    //     reference: vehicle.reference,
-    //     joinDate: `${join.toISOString()}`,
-    //     leaveDate: `${leave.toISOString()}`,
-    //     name: '',
-    //     parking: { id: vehicle.parking.id },
-    //   },
-    // });
   };
 
   return (

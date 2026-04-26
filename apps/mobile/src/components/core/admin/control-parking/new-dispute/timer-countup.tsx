@@ -1,13 +1,14 @@
 /* eslint-disable max-lines-per-function */
 import { format } from 'date-fns';
 import React, { useEffect, useRef, useState } from 'react';
-import { type Control, useController } from 'react-hook-form';
+import { useController } from 'react-hook-form';
 import { Pressable, Text, View } from 'react-native';
 
+import { type AnyControl } from '@/components/ui';
 import { cn, formatTimeSeconds } from '@/lib';
 
 interface TimerCountUpProps {
-  control: Control<any>;
+  control: AnyControl;
   startDateName: string;
   endDateName: string;
   autoStart?: boolean;

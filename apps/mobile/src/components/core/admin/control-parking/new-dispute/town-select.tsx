@@ -2,14 +2,14 @@ import { api } from 'convex/_generated/api';
 import { type Id } from 'convex/_generated/dataModel';
 import { useSafeQuery } from '@/hooks/use-convex-hooks';
 import React from 'react';
-import { type Control, useWatch } from 'react-hook-form';
+import { useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
-import { ActivityIndicator, ControlledSelect, View } from '@/components/ui';
+import { type AnyControl, ActivityIndicator, ControlledSelect, View } from '@/components/ui';
 import { secondary } from '@/components/ui/colors';
 
 interface Props {
-  control: Control<any>;
+  control: AnyControl;
   name: string;
   className?: string;
 }

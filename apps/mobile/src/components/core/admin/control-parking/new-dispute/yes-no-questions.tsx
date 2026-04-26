@@ -1,14 +1,13 @@
 import React from 'react';
-import { type Control } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
 import { YesNoQuestion } from '@/components/common';
-import { View } from '@/components/ui';
+import { type AnyControl, View } from '@/components/ui';
 import { cn } from '@/lib';
 
 interface Props {
   className?: string;
-  control?: Control<any>;
+  control?: AnyControl;
 }
 
 export function YesNoQuestions({ className, control }: Props) {

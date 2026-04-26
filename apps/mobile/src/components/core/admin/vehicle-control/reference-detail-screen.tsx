@@ -139,7 +139,7 @@ export function ReferenceDetailScreen({
             <EasyparkCheckReference name="easyParkResponse" control={control} />
 
             <ImageGalleryItem
-              control={control as any}
+              control={control}
               name="galleryStorageIds"
               label={t('forms.gallery')}
             />

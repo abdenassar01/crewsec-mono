@@ -63,7 +63,7 @@ export default function UpdateParking() {
             currentStep={currentStep}
             onSubmit={async (formData) => {
               await updateParkingAndUser({
-                parkingId: parkingIdValue as any,
+                parkingId: parkingIdValue as Id<'parkings'>,
                 email: formData.email,
                 name: formData.name,
                 phone: formData.phone,
@@ -74,7 +74,7 @@ export default function UpdateParking() {
                 website: formData.website || '',
                 address: formData.address || '',
                 maxCapacity: formData.maxCapacity ? parseInt(formData.maxCapacity, 10) : undefined,
-                imageStorageId: formData.image as any,
+                imageStorageId: (formData.image || undefined) as Id<'_storage'> | undefined,
               });
             }}
           />
