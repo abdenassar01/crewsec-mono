@@ -11,7 +11,7 @@ import { UserForm } from "./user-form";
 import { UserFilters, type UserFilters as UserFiltersType } from "./user-filters";
 import { getColumns } from "./columns";
 import { api } from "@convex/_generated/api";
-import type { Doc } from "@convex/_generated/dataModel";
+import type { Doc, Id } from "@convex/_generated/dataModel";
 import { useSafeMutation, useSafePaginatedQuery } from "@/lib/hooks";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,6 +39,7 @@ export default function UserListClient() {
   const createUser = useSafeMutation(api.users.create);
   const deleteUser = useSafeMutation(api.users.deleteUser);
   const resetUserPassword = useSafeMutation(api.users.resetUserPassword);
+  const getUploadUrl = useSafeMutation(api.storage.generateUploadUrl);
 
   const handleDelete = (userId: Doc<"users">["_id"]) => {
     const user = results.find((u: any) => u._id === userId);
@@ -146,6 +147,30 @@ export default function UserListClient() {
   );
 
   const handleFormSubmit = async (data: any, isEdit: boolean) => {
+    let avatarStorageId: Id<'_storage'> | null = null;
+
+    if (data.avatarImage && data.avatarImage instanceof File) {
+      const uploadUrl = await getUploadUrl();
+      if (!uploadUrl) {
+        toast.error("Failed to get upload URL");
+        return;
+      }
+
+      const response = await fetch(uploadUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': data.avatarImage.type },
+        body: data.avatarImage,
+      });
+
+      if (response.ok) {
+        const { storageId } = await response.json();
+        avatarStorageId = storageId;
+      } else {
+        toast.error('Failed to upload avatar');
+        return;
+      }
+    }
+
     if (isEdit) {
       if (!editingUser) return;
       const result = await updateUser({
@@ -156,6 +181,7 @@ export default function UserListClient() {
         role: data.role,
         enabled: data.enabled,
         organizationId: data.organizationId || undefined,
+        avatar: avatarStorageId || undefined,
       });
       if (result !== null) {
         toast.success("User updated successfully!");
@@ -169,6 +195,7 @@ export default function UserListClient() {
         name: data.name,
         role: data.role,
         organizationId: data.organizationId || undefined,
+        avatar: avatarStorageId || undefined,
       });
       if (result !== null) {
         toast.success("New user created!");

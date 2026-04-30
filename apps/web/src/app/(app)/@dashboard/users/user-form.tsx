@@ -5,9 +5,11 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ImageUpload } from "@/components/common/forms/ImageUpload";
 import type { Doc, Id } from "@convex/_generated/dataModel";
 import { useSafeQuery } from "@/lib/hooks";
 import { api } from "@convex/_generated/api";
+import { useState } from "react";
 
 type UserFormProps = {
   onSubmit: (data: any, isEdit: boolean) => void;
@@ -32,6 +34,9 @@ export function UserForm({ onSubmit, defaultValues, isPending }: UserFormProps) 
   const isSuperAdmin = (currentUser as any)?.role === "SUPER_ADMIN";
   const orgList = (organizations as any[]) ?? [];
 
+  const [currentAvatar, setCurrentAvatar] = useState<File | null>(null);
+  const avatarUrl = (defaultValues as any)?.avatarUrl || null;
+
   const form = useForm({
     defaultValues: {
       name: defaultValues?.name ?? "",
@@ -42,9 +47,17 @@ export function UserForm({ onSubmit, defaultValues, isPending }: UserFormProps) 
       organizationId: (defaultValues as any)?.organizationId ?? "",
     },
     onSubmit: async ({ value }) => {
-      await onSubmit(value, isEditMode);
+      await onSubmit({ ...value, avatarImage: currentAvatar }, isEditMode);
     },
   });
+
+  const handleAvatarChange = (file: File | null) => {
+    setCurrentAvatar(file);
+  };
+
+  const handleAvatarRemove = () => {
+    setCurrentAvatar(null);
+  };
 
   return (
     <form
@@ -55,6 +68,13 @@ export function UserForm({ onSubmit, defaultValues, isPending }: UserFormProps) 
       }}
       className="space-y-4"
     >
+      <ImageUpload
+        value={avatarUrl}
+        onChange={handleAvatarChange}
+        onRemove={handleAvatarRemove}
+        disabled={isPending}
+        label="Avatar"
+      />
       <form.Field
         name="name"
         validators={{ onChange: userSchema.shape.name }}

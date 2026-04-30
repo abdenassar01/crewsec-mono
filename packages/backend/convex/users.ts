@@ -224,6 +224,7 @@ export const update = mutation({
     ),
     enabled: v.boolean(),
     organizationId: v.optional(v.id('organizations')),
+    avatar: v.optional(v.id('_storage')),
   },
   handler: async (ctx, args) => {
     const currentUser = await requireAdmin(ctx);
