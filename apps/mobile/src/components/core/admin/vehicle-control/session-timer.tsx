@@ -40,7 +40,7 @@ export function SessionTimer({ startTime, onStartSession }: SessionTimerProps) {
           </Text>
           <Button
             label="Start New Session"
-            className="bg-success-500/10 px-4"
+            className="h-10 w-[49%] bg-success-500/10"            
             textClassName="text-success-500 text-xs font-normal"
             onPress={onStartSession}
           />
@@ -67,13 +67,13 @@ export function EndSession() {
           <Text className="mb-3 text-center text-lg">{t('modal.session')}</Text>
           <View className="flex-row items-center justify-between">
             <Button
-              className="h-14 w-[49%] bg-success-500/10"
+              className="h-10 w-[49%] bg-success-500/10"
               textClassName="text-success-500"
               label={t('cancel')}
               onPress={dismiss}
             />
             <Button
-              className="h-14 w-[49%] bg-danger-500/10"
+              className="h-10 w-[49%] bg-danger-500/10"
               textClassName="text-danger-500"
               label={t('yes')}
               onPress={endSession}

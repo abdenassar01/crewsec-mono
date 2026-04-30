@@ -7,7 +7,7 @@ import React, { useState } from 'react';
 import { type Control, useFieldArray, useWatch } from 'react-hook-form';
 import { Image, TouchableOpacity, View } from 'react-native';
 
-import { type AnyControl } from '@/components/ui';
+import { Text, type AnyControl } from '@/components/ui';
 import { cn } from '@/lib';
 import { useBatchUpload } from '@/utils/batch-upload';
 
@@ -53,7 +53,9 @@ export function ImageGalleryItem({ control, name, label, className }: Props) {
 
   return (
     <View className={cn('', className)}>
-      <Text className="my-1 mt-2 !text-xxs">{label}</Text>
+      <View className="my-1 mt-2 ">
+        <Text className="text-xxs">{label}</Text>
+      </View>
       <View style={{ gap: 5 }} className={cn('flex-wrap flex-row w-full')}>
         {/* Display existing images */}
         {value &&
