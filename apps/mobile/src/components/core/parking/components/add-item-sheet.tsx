@@ -27,6 +27,7 @@ interface VehicleFormValues {
   name?: string;
   'leaveDate-date': string[];
   'joinDate-date': string[];
+  'joinDate-time': string;
 }
 
 interface Props {
@@ -77,9 +78,7 @@ export function AddItemSheet({ refresh, parkingId, isAdmin = false }: Props) {
 
   const onSubmit = (formData: VehicleFormValues) => {
     try {
-      // Validate that date arrays exist and have at least one element
       const joinDateArray = formData['joinDate-date'];
-      const leaveDateArray = formData['leaveDate-date'];
 
       if (
         !joinDateArray ||
@@ -87,55 +86,51 @@ export function AddItemSheet({ refresh, parkingId, isAdmin = false }: Props) {
         joinDateArray.length === 0
       ) {
         showMessage({
-          message: 'Join date is required',
+          message: 'Start date is required',
           type: 'danger',
         });
         return;
       }
 
-      if (
-        !leaveDateArray ||
-        !Array.isArray(leaveDateArray) ||
-        leaveDateArray.length === 0
-      ) {
-        showMessage({
-          message: 'Leave date is required',
-          type: 'danger',
-        });
-        return;
-      }
-
-      // Safely create date objects
       let join = new Date(joinDateArray[0]);
       if (isNaN(join.getTime())) {
         showMessage({
-          message: 'Invalid join date format',
+          message: 'Invalid start date format',
           type: 'danger',
         });
         return;
       }
 
-      let leave = new Date(leaveDateArray[0]);
-      if (isNaN(leave.getTime())) {
-        showMessage({
-          message: 'Invalid leave date format',
-          type: 'danger',
-        });
-        return;
+      const joinTimeStr = formData['joinDate-time'];
+      if (joinTimeStr) {
+        const [hours, minutes] = joinTimeStr.split(':').map(Number);
+        join.setHours(hours, minutes, 0, 0);
+      } else {
+        const now = new Date();
+        join.setHours(now.getHours(), now.getMinutes(), 0, 0);
       }
 
-      console.log('DEBUG - Original dates:', {
-        joinDateRaw: joinDateArray[0],
-        leaveDateRaw: leaveDateArray[0],
-        joinDate: join.toISOString(),
-        leaveDate: leave.toISOString(),
-      });
+      const leaveDateArray = formData['leaveDate-date'];
+      let leave: Date;
+      if (
+        leaveDateArray &&
+        Array.isArray(leaveDateArray) &&
+        leaveDateArray.length > 0
+      ) {
+        leave = new Date(leaveDateArray[0]);
+        if (isNaN(leave.getTime())) {
+          showMessage({
+            message: 'Invalid leave date format',
+            type: 'danger',
+          });
+          return;
+        }
+        leave.setHours(23, 59, 0, 0);
+      } else {
+        leave = new Date(join);
+        leave.setHours(23, 59, 0, 0);
+      }
 
-      const time = new Date();
-      leave.setHours(23, 59, 0, 0);
-      join.setHours(time.getHours(), time.getMinutes(), 0, 0);
-
-      // Validate that join date is not in the past
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const joinDateNormalized = new Date(join);
@@ -149,19 +144,10 @@ export function AddItemSheet({ refresh, parkingId, isAdmin = false }: Props) {
         return;
       }
 
-      // Validate that join date is before leave date (compare dates only, not times)
       const joinDateForCompare = new Date(join);
       joinDateForCompare.setHours(0, 0, 0, 0);
       const leaveDateForCompare = new Date(leave);
       leaveDateForCompare.setHours(0, 0, 0, 0);
-
-      console.log('DEBUG - Date comparison:', {
-        joinDateForCompare: joinDateForCompare.toISOString(),
-        leaveDateForCompare: leaveDateForCompare.toISOString(),
-        joinTimestamp: joinDateForCompare.getTime(),
-        leaveTimestamp: leaveDateForCompare.getTime(),
-        comparison: joinDateForCompare.getTime() > leaveDateForCompare.getTime(),
-      });
 
       if (joinDateForCompare.getTime() > leaveDateForCompare.getTime()) {
         showMessage({
@@ -203,7 +189,7 @@ export function AddItemSheet({ refresh, parkingId, isAdmin = false }: Props) {
           }
         />
       </TouchableOpacity>
-      <Modal index={0} snapPoints={['30%', '42%']} ref={ref}>
+      <Modal index={0} snapPoints={['30%', '45%']} ref={ref}>
         <ScrollView className="container">
           <KeyboardAvoidingView behavior="padding" keyboardVerticalOffset={50}>
             <ControlledInput
@@ -221,6 +207,7 @@ export function AddItemSheet({ refresh, parkingId, isAdmin = false }: Props) {
                 name="joinDate"
                 className="w-[49%] bg-background dark:bg-background-dark"
                 placeholder={t('manage-parking.from')}
+                showTimePicker
               />
               <DateTimePicker
                 control={control}

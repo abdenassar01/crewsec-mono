@@ -10,9 +10,10 @@ import { CarReservationCard } from './car-reservation-card';
 interface Props {
   data: Doc<'vehicles'>[];
   estimatedSize?: number;
+  showControlFee?: boolean;
 }
 
-export function VehicleList({ data, estimatedSize }: Props) {
+export function VehicleList({ data, estimatedSize, showControlFee = false }: Props) {
   return (
     <>
       <FlashList
@@ -20,7 +21,7 @@ export function VehicleList({ data, estimatedSize }: Props) {
         data={data}
         renderItem={({ index, item }) => (
           <View key={item._id} className={cn('w-full mb-2', index % 2 === 0 ? 'pr-2' : '')}>
-            <CarReservationCard vehicle={item} />
+            <CarReservationCard vehicle={item} showControlFee={showControlFee} />
           </View>
         )}
         keyExtractor={(item, index) => `list-item-${item._id || index}`}

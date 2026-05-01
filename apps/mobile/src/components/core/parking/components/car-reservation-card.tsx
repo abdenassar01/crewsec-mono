@@ -31,9 +31,10 @@ interface VehicleWithParking extends Doc<'vehicles'> {
 
 interface Props {
   vehicle: VehicleWithParking;
+  showControlFee?: boolean;
 }
 
-export function CarReservationCard({ vehicle }: Props) {
+export function CarReservationCard({ vehicle, showControlFee = false }: Props) {
   const colorScheme = useColorScheme();
   const { t } = useTranslation();
   const router = useRouter();
@@ -64,6 +65,7 @@ export function CarReservationCard({ vehicle }: Props) {
         <CarParkingReservationModal
           vehicle={vehicle}
           openEdit={() => setOpenEditModal(true)}
+          showControlFee={showControlFee}
         />
       </Modal>
       <TouchableOpacity

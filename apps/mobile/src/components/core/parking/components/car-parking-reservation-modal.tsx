@@ -16,12 +16,14 @@ interface Props {
   callback?: () => void;
   openEdit?: () => void;
   vehicle: Doc<'vehicles'>;
+  showControlFee?: boolean;
 }
 
 export function CarParkingReservationModal({
   callback,
   vehicle,
   openEdit,
+  showControlFee = false,
 }: Props) {
   const { t } = useTranslation();
 
@@ -78,10 +80,12 @@ export function CarParkingReservationModal({
           }
         />
         <View className="flex-row gap-2">
-          <CreateControlFeeModal
-            vehicle={vehicle}
-            reference={vehicle.reference}
-          />
+          {showControlFee && (
+            <CreateControlFeeModal
+              vehicle={vehicle}
+              reference={vehicle.reference}
+            />
+          )}
           {openEdit && (
             <Button
               label={t('manage-parking.expand-date')}

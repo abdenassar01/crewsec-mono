@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
-  type Control,
+  Control,
   type FieldValues,
   type RegisterOptions,
   useWatch,
@@ -11,6 +11,7 @@ import { Modal } from '@/components/ui/modal';
 import { cn } from '@/lib/helpers';
 
 import { CalendarField } from './calendar';
+import { TimePicker } from './time-picker';
 
 export interface NDateTimePickerProps {
   label?: string;
@@ -18,6 +19,7 @@ export interface NDateTimePickerProps {
   error?: string;
   className?: string;
   placeholder?: string;
+  showTimePicker?: boolean;
 }
 
 type TRule<T extends FieldValues> =
@@ -42,48 +44,70 @@ export function DateTimePicker<T extends FieldValues>({
   placeholder,
   control,
   name,
+  showTimePicker: showTimePickerProp = false,
 }: ControlledInputProps<T>) {
   const { present, ref, dismiss } = useModal();
-  // const [showTimePicker, setShowTimePicker] = useState<boolean>(false);
+  const [isTimeStep, setIsTimeStep] = useState(false);
   const form = useWatch<T>({ control });
+
+  const displayValue = (() => {
+    const dateValue =
+      form &&
+      form[`${name}-date`] &&
+      Array.isArray(form[`${name}-date`]) &&
+      form[`${name}-date`].length > 0
+        ? form[`${name}-date`][0]
+        : null;
+    const timeValue =
+      form && form[`${name}-time`] ? form[`${name}-time`] : null;
+
+    if (dateValue && timeValue) {
+      return `${dateValue} ${timeValue}`;
+    }
+    if (dateValue) return dateValue;
+    return placeholder;
+  })();
 
   return (
     <>
       <TouchableOpacity
-        onPress={present}
+        onPress={() => {
+          setIsTimeStep(false);
+          present();
+        }}
         className={cn(
           'h-10 w-full flex-row items-center rounded-xl border border-secondary/10 bg-background-secondary px-3 dark:bg-background-secondary-dark',
           className,
         )}
       >
         <Text className="flex-1 text-sm text-gray-900 dark:text-gray-100">
-          {form &&
-          form[`${name}-date`] &&
-          Array.isArray(form[`${name}-date`]) &&
-          form[`${name}-date`].length > 0
-            ? form[`${name}-date`][0] || placeholder
-            : placeholder}
+          {displayValue}
         </Text>
       </TouchableOpacity>
       <Modal snapPoints={['45%', '55%']} ref={ref}>
         <View className="container">
-          {/* {showTimePicker ? (
+          {isTimeStep && showTimePickerProp ? (
             <TimePicker
-              control={control}
+              control={control as Control<any>}
               name={`${name}-time`}
               callback={() => {
                 dismiss();
-                setShowTimePicker(false);
+                setIsTimeStep(false);
               }}
             />
-          ) : ( */}
-          <CalendarField
-            // callback={() => setShowTimePicker(true)}
-            callback={dismiss}
-            control={control}
-            name={`${name}-date`}
-          />
-          {/* )} */}
+          ) : (
+            <CalendarField
+              callback={() => {
+                if (showTimePickerProp) {
+                  setIsTimeStep(true);
+                } else {
+                  dismiss();
+                }
+              }}
+              control={control as Control<any>}
+              name={`${name}-date`}
+            />
+          )}
         </View>
       </Modal>
     </>

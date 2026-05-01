@@ -60,7 +60,7 @@ export function VehicleByParkingList({ id }: Props) {
             No Vehicle in this parking
           </Text>
         )}
-        {data && <VehicleList data={data} />}
+        {data && <VehicleList data={data} showControlFee />}
       </ScrollView>
     </View>
   );
