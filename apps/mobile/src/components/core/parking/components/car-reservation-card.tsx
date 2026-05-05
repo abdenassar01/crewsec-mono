@@ -81,18 +81,20 @@ export function CarReservationCard({ vehicle, showControlFee = false }: Props) {
               {vehicle.reference.toUpperCase()}
             </Text>
           </View>
-          <TouchableOpacity
-            onPress={(e) => {
-              e.stopPropagation();
-              router.push({
-                pathname: '/vehicle-control',
-                params: { reference: vehicle.reference },
-              });
-            }}
-            className="mr-2 items-center justify-center rounded-full bg-white/20 px-3 py-1.5"
-          >
-            <Ionicons name="document-text-outline" size={16} color="white" />
-          </TouchableOpacity>
+          {showControlFee && (
+            <TouchableOpacity
+              onPress={(e) => {
+                e.stopPropagation();
+                router.push({
+                  pathname: '/vehicle-control',
+                  params: { reference: vehicle.reference },
+                });
+              }}
+              className="mr-2 items-center justify-center rounded-full bg-white/20 px-3 py-1.5"
+            >
+              <Ionicons name="document-text-outline" size={16} color="white" />
+            </TouchableOpacity>
+          )}
           <View
             className={`size-9 items-center justify-center rounded-full ${isActive ? 'bg-green-500' : 'bg-gray-400'}`}
           >

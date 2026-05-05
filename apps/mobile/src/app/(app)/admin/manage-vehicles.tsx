@@ -137,7 +137,7 @@ export const VehiclesTab = () => {
       ) : (
         <View className="mt-3 gap-2 pb-16">
           {vehicles.page.map((vehicle) => (
-            <CarReservationCard key={vehicle._id} vehicle={vehicle} />
+            <CarReservationCard key={vehicle._id} vehicle={vehicle} showControlFee />
           ))}
         </View>
       )}

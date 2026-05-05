@@ -8,7 +8,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import type { Doc } from "@convex/_generated/dataModel";
 import { api } from "@convex/_generated/api";
 import { DatePicker } from "@/components/ui/date-picker";
-import { TimePicker } from "@/components/ui/time-picker";
 import { useSafeQuery } from "@/lib/hooks";
 import { useMemo } from "react";
 
@@ -45,7 +44,7 @@ export function VehicleForm({ onSubmit, defaultValues, isPending }: VehicleFormP
     defaultValues: {
       reference: defaultValues?.reference ?? "",
       name: defaultValues?.name ?? "",
-      joinDate: defaultValues?.joinDate ?? (() => { const d = new Date(); d.setHours(d.getHours() + 1, 0, 0, 0); return d.getTime(); })(),
+      joinDate: defaultValues?.joinDate ?? Date.now(),
       leaveDate: defaultValues?.leaveDate ?? (() => { const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(0,0,0,0); return d.getTime(); })(),
       parkingId: defaultValues?.parkingId ?? "",
     },
@@ -110,54 +109,30 @@ export function VehicleForm({ onSubmit, defaultValues, isPending }: VehicleFormP
             )}
           />
         </div>
-        <div>
-          <label className="block text-sm font-medium mb-2">Join Date</label>
-          <div className="grid grid-cols-2 gap-3">
+        {isEditMode ? (
+          <div>
+            <label className="block text-sm font-medium mb-2">Join Date</label>
             <form.Field
               name="joinDate"
               validators={{ onChange: vehicleSchema.shape.joinDate }}
               children={(field) => (
                 <DatePicker
                   value={field.state.value}
-                  onChange={(timestamp) => {
-                    const now = new Date();
-                    const selected = new Date(timestamp);
-                    const today = new Date();
-                    today.setHours(0, 0, 0, 0);
-                    if (!isEditMode && selected.getTime() === today.getTime()) {
-                      selected.setHours(now.getHours(), now.getMinutes(), 0, 0);
-                    } else {
-                      const existingDate = new Date(field.state.value);
-                      selected.setHours(existingDate.getHours(), existingDate.getMinutes(), 0, 0);
-                    }
-                    field.handleChange(selected.getTime());
-                  }}
+                  onChange={(timestamp) => field.handleChange(timestamp)}
                   placeholder="Select join date"
-                  fromDate={isEditMode ? undefined : getTodayStart()}
-                />
-              )}
-            />
-            <form.Field
-              name="joinDate"
-              children={(field) => (
-                <TimePicker
-                  value={field.state.value}
-                  onChange={(timestamp) => {
-                    if (!isEditMode && timestamp < Date.now()) {
-                      const now = new Date();
-                      now.setMinutes(now.getMinutes() + 1, 0, 0);
-                      field.handleChange(now.getTime());
-                    } else {
-                      field.handleChange(timestamp);
-                    }
-                  }}
-                  dateTimestamp={field.state.value}
-                  placeholder="Select time"
                 />
               )}
             />
           </div>
-        </div>
+        ) : (
+          <div>
+            <label className="block text-sm font-medium mb-2">Join Date</label>
+            <div className="bg-muted rounded-md px-3 py-2 text-sm text-muted-foreground">
+              {new Date().toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+            </div>
+            <p className="text-xs text-gray-500 mt-1">Set automatically to current time</p>
+          </div>
+        )}
         <div>
           <label className="block text-sm font-medium mb-2">Leave Date</label>
           <form.Field

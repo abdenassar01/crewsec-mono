@@ -12,7 +12,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { DatePicker } from '@/components/ui/date-picker';
-import { TimePicker } from '@/components/ui/time-picker';
 
 interface AddVehicleDialogProps {
   open: boolean;
@@ -32,7 +31,7 @@ export function AddVehicleDialog({
 }: AddVehicleDialogProps) {
   const [reference, setReference] = useState('');
   const [name, setName] = useState('');
-  const [joinDate, setJoinDate] = useState<number | undefined>(undefined);
+  const [joinDate] = useState<number>(() => Date.now());
   const [leaveDate, setLeaveDate] = useState<number | undefined>(undefined);
 
   const getTodayStart = () => {
@@ -41,53 +40,18 @@ export function AddVehicleDialog({
     return d;
   };
 
-  const handleJoinDateChange = (timestamp: number) => {
-    const now = new Date();
-    const selected = new Date(timestamp);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    if (selected.getTime() === today.getTime()) {
-      selected.setHours(now.getHours(), now.getMinutes(), 0, 0);
-    } else {
-      selected.setHours(0, 0, 0, 0);
-    }
-    setJoinDate(selected.getTime());
-    if (leaveDate && selected.getTime() >= leaveDate) {
-      const leave = new Date(selected);
-      leave.setDate(leave.getDate() + 1);
-      leave.setHours(0, 0, 0, 0);
-      setLeaveDate(leave.getTime());
-    }
-  };
-
   const handleLeaveDateChange = (timestamp: number) => {
     const selected = new Date(timestamp);
-    if (joinDate) {
-      const joinDay = new Date(joinDate);
-      joinDay.setHours(0, 0, 0, 0);
-      selected.setHours(23, 59, 0, 0);
-    }
+    selected.setHours(23, 59, 0, 0);
     setLeaveDate(selected.getTime());
   };
 
-  const handleJoinTimeChange = (timestamp: number) => {
-    const newJoin = new Date(timestamp);
-    const now = new Date();
-    if (newJoin.getTime() < now.getTime()) {
-      newJoin.setHours(now.getHours(), now.getMinutes(), 0, 0);
-    }
-    setJoinDate(newJoin.getTime());
-  };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!reference || !joinDate || !leaveDate) {
-      return;
-    }
-
-    if (Date.now() >= joinDate) {
-      alert('Startdatum och tid måste vara i framtiden');
+    if (!reference || !leaveDate) {
       return;
     }
 
@@ -106,13 +70,12 @@ export function AddVehicleDialog({
     // Reset form
     setReference('');
     setName('');
-    setJoinDate(undefined);
     setLeaveDate(undefined);
   };
 
-  const previewData = reference || joinDate || leaveDate ? {
+  const previewData = reference || leaveDate ? {
     reference: reference.toUpperCase() || 'XXX000',
-    joinDate: joinDate || Date.now(),
+    joinDate,
     leaveDate: leaveDate || Date.now() + 7 * 24 * 60 * 60 * 1000,
   } : null;
 
@@ -193,26 +156,10 @@ export function AddVehicleDialog({
 
           <div className="space-y-2">
             <Label>Start</Label>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <DatePicker
-                  value={joinDate}
-                  onChange={handleJoinDateChange}
-                  placeholder="Startdatum"
-                  fromDate={getTodayStart()}
-                />
-                <p className="text-xs text-gray-500 mt-1">Datum</p>
-              </div>
-              <div>
-                <TimePicker
-                  value={joinDate}
-                  onChange={handleJoinTimeChange}
-                  dateTimestamp={joinDate}
-                  placeholder="Starttid"
-                />
-                <p className="text-xs text-gray-500 mt-1">Tid</p>
-              </div>
+            <div className="bg-gray-50 rounded-md px-3 py-2 text-sm text-gray-700">
+              {new Date(joinDate).toLocaleDateString('sv-SE', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
             </div>
+            <p className="text-xs text-gray-500">Starttid sätts automatiskt</p>
           </div>
 
           <div className="space-y-2">
@@ -222,9 +169,8 @@ export function AddVehicleDialog({
                 value={leaveDate}
                 onChange={handleLeaveDateChange}
                 placeholder="Slutdatum"
-                fromDate={joinDate ? new Date(joinDate) : getTodayStart()}
+                fromDate={getTodayStart()}
               />
-              <p className="text-xs text-gray-500 mt-1">Datum</p>
             </div>
           </div>
 
