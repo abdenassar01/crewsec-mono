@@ -18,6 +18,10 @@ interface DatePickerProps {
   onChange: (timestamp: number) => void
   placeholder?: string
   className?: string
+  disabled?: boolean
+  disabledDays?: Date[]
+  fromDate?: Date
+  toDate?: Date
 }
 
 export function DatePicker({
@@ -25,6 +29,10 @@ export function DatePicker({
   onChange,
   placeholder = "Pick a date",
   className,
+  disabled,
+  disabledDays,
+  fromDate,
+  toDate,
 }: DatePickerProps) {
   const [open, setOpen] = React.useState(false)
 
@@ -53,6 +61,7 @@ export function DatePicker({
       <PopoverTrigger asChild>
         <Button
           variant={"outline"}
+          disabled={disabled}
           className={cn(
             "w-full justify-start text-left font-normal",
             !date && "text-muted-foreground",
@@ -69,6 +78,9 @@ export function DatePicker({
           selected={date}
           onSelect={handleSelect}
           initialFocus
+          disabled={disabled ? true : disabledDays}
+          startMonth={fromDate}
+          endMonth={toDate}
         />
       </PopoverContent>
     </Popover>

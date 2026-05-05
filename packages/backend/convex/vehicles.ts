@@ -404,6 +404,14 @@ export const createMyVehicle = mutation({
     joinDate: v.number(),
   },
   handler: async (ctx, args): Promise<CustomResponse<{ vehicleId: string }>> => {
+    if (args.joinDate <= Date.now()) {
+      return failure('Start date and time must be in the future', ErrorCodes.BAD_REQUEST);
+    }
+
+    if (args.leaveDate <= args.joinDate) {
+      return failure('Leave date must be after start date', ErrorCodes.BAD_REQUEST);
+    }
+
     const result = await getClientUserAndParking(ctx);
     if ('error' in result) return result.error;
 

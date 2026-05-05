@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { DatePicker } from '@/components/ui/date-picker';
+import { TimePicker } from '@/components/ui/time-picker';
 
 interface AddVehicleDialogProps {
   open: boolean;
@@ -34,10 +35,59 @@ export function AddVehicleDialog({
   const [joinDate, setJoinDate] = useState<number | undefined>(undefined);
   const [leaveDate, setLeaveDate] = useState<number | undefined>(undefined);
 
+  const getTodayStart = () => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  };
+
+  const handleJoinDateChange = (timestamp: number) => {
+    const now = new Date();
+    const selected = new Date(timestamp);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (selected.getTime() === today.getTime()) {
+      selected.setHours(now.getHours(), now.getMinutes(), 0, 0);
+    } else {
+      selected.setHours(0, 0, 0, 0);
+    }
+    setJoinDate(selected.getTime());
+    if (leaveDate && selected.getTime() >= leaveDate) {
+      const leave = new Date(selected);
+      leave.setDate(leave.getDate() + 1);
+      leave.setHours(0, 0, 0, 0);
+      setLeaveDate(leave.getTime());
+    }
+  };
+
+  const handleLeaveDateChange = (timestamp: number) => {
+    const selected = new Date(timestamp);
+    if (joinDate) {
+      const joinDay = new Date(joinDate);
+      joinDay.setHours(0, 0, 0, 0);
+      selected.setHours(23, 59, 0, 0);
+    }
+    setLeaveDate(selected.getTime());
+  };
+
+  const handleJoinTimeChange = (timestamp: number) => {
+    const newJoin = new Date(timestamp);
+    const now = new Date();
+    if (newJoin.getTime() < now.getTime()) {
+      newJoin.setHours(now.getHours(), now.getMinutes(), 0, 0);
+    }
+    setJoinDate(newJoin.getTime());
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!reference || !joinDate || !leaveDate) {
+      return;
+    }
+
+    if (Date.now() >= joinDate) {
+      alert('Startdatum och tid måste vara i framtiden');
       return;
     }
 
@@ -142,24 +192,39 @@ export function AddVehicleDialog({
           </div>
 
           <div className="space-y-2">
-            <Label>Datum</Label>
+            <Label>Start</Label>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <DatePicker
                   value={joinDate}
-                  onChange={setJoinDate}
+                  onChange={handleJoinDateChange}
                   placeholder="Startdatum"
+                  fromDate={getTodayStart()}
                 />
-                <p className="text-xs text-gray-500 mt-1">Från</p>
+                <p className="text-xs text-gray-500 mt-1">Datum</p>
               </div>
               <div>
-                <DatePicker
-                  value={leaveDate}
-                  onChange={setLeaveDate}
-                  placeholder="Slutdatum"
+                <TimePicker
+                  value={joinDate}
+                  onChange={handleJoinTimeChange}
+                  dateTimestamp={joinDate}
+                  placeholder="Starttid"
                 />
-                <p className="text-xs text-gray-500 mt-1">Till</p>
+                <p className="text-xs text-gray-500 mt-1">Tid</p>
               </div>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Slut</Label>
+            <div>
+              <DatePicker
+                value={leaveDate}
+                onChange={handleLeaveDateChange}
+                placeholder="Slutdatum"
+                fromDate={joinDate ? new Date(joinDate) : getTodayStart()}
+              />
+              <p className="text-xs text-gray-500 mt-1">Datum</p>
             </div>
           </div>
 
