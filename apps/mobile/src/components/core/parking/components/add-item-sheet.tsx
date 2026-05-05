@@ -27,7 +27,6 @@ interface VehicleFormValues {
   name?: string;
   'leaveDate-date': string[];
   'joinDate-date': string[];
-  'joinDate-time': string;
 }
 
 interface Props {
@@ -78,36 +77,31 @@ export function AddItemSheet({ refresh, parkingId, isAdmin = false }: Props) {
 
   const onSubmit = (formData: VehicleFormValues) => {
     try {
+      const now = new Date();
       const joinDateArray = formData['joinDate-date'];
-
+      let join: Date;
       if (
-        !joinDateArray ||
-        !Array.isArray(joinDateArray) ||
-        joinDateArray.length === 0
+        joinDateArray &&
+        Array.isArray(joinDateArray) &&
+        joinDateArray.length > 0
       ) {
-        showMessage({
-          message: 'Start date is required',
-          type: 'danger',
-        });
-        return;
-      }
-
-      let join = new Date(joinDateArray[0]);
-      if (isNaN(join.getTime())) {
-        showMessage({
-          message: 'Invalid start date format',
-          type: 'danger',
-        });
-        return;
-      }
-
-      const joinTimeStr = formData['joinDate-time'];
-      if (joinTimeStr) {
-        const [hours, minutes] = joinTimeStr.split(':').map(Number);
-        join.setHours(hours, minutes, 0, 0);
-      } else {
-        const now = new Date();
+        join = new Date(joinDateArray[0]);
         join.setHours(now.getHours(), now.getMinutes(), 0, 0);
+      } else {
+        join = new Date(now);
+      }
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const joinDateForCheck = new Date(join);
+      joinDateForCheck.setHours(0, 0, 0, 0);
+
+      if (joinDateForCheck.getTime() < today.getTime()) {
+        showMessage({
+          message: t('forms.errors.join-date-past-error'),
+          type: 'danger',
+        });
+        return;
       }
 
       const leaveDateArray = formData['leaveDate-date'];
@@ -129,19 +123,6 @@ export function AddItemSheet({ refresh, parkingId, isAdmin = false }: Props) {
       } else {
         leave = new Date(join);
         leave.setHours(23, 59, 0, 0);
-      }
-
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const joinDateNormalized = new Date(join);
-      joinDateNormalized.setHours(0, 0, 0, 0);
-
-      if (joinDateNormalized.getTime() < today.getTime()) {
-        showMessage({
-          message: t('forms.errors.join-date-past-error'),
-          type: 'danger',
-        });
-        return;
       }
 
       const joinDateForCompare = new Date(join);
@@ -207,7 +188,6 @@ export function AddItemSheet({ refresh, parkingId, isAdmin = false }: Props) {
                 name="joinDate"
                 className="w-[49%] bg-background dark:bg-background-dark"
                 placeholder={t('manage-parking.from')}
-                showTimePicker
               />
               <DateTimePicker
                 control={control}
@@ -216,6 +196,9 @@ export function AddItemSheet({ refresh, parkingId, isAdmin = false }: Props) {
                 placeholder={t('manage-parking.to')}
               />
             </View>
+            <Text className="text-xxs text-gray-500 mt-1">
+              Tid sätts automatiskt till nuvarande tid
+            </Text>
             <Button
               onPress={handleSubmit(onSubmit, (err) =>
                 console.log('err: ', err),
