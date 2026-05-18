@@ -21,16 +21,16 @@ export function ManagerTopWidget() {
             source={{ uri: user?.avatarUrl || undefined }}
             className="!h-32 !w-32 rounded-xl bg-white"
           />
-          <View className="border-l border-secondary/10 pl-3">
-            <Text className="w-full whitespace-nowrap text-xl font-bold uppercase text-secondary">
+          <View className="border-l border-secondary/10 pl-3 flex justify-center items-center">
+            <Text className="w-full whitespace-nowrap text-xl font-bold uppercase text-secondary text-center">
               {user?.name}
             </Text>
-            <Text className="text-xxs">
+            {/* <Text className="text-xxs">
               {moment(user?._creationTime).format('DD MMM YYYY')}
             </Text>
             <Text className="mt-3 rounded-xl bg-tertiary/20 p-2 text-center text-xs capitalize text-tertiary">
               {user?.role}
-            </Text>
+            </Text> */}
           </View>
         </View>
         <TouchableOpacity

@@ -14,6 +14,7 @@ import type { Doc } from "@convex/_generated/dataModel";
 import { api } from "@convex/_generated/api";
 import { useMutation } from "convex/react";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { useDebounce } from "@/lib/hooks";
 
 interface ParkingListProps {
   results: ParkingWithUser[];
@@ -48,6 +49,8 @@ export function ParkingList({
   });
   const getUploadUrl = useMutation(api.parkings.getUploadUrl);
 
+  const debouncedSearchTerm = useDebounce(filters.searchTerm, 300);
+
   const handleFiltersChange = (newFilters: ParkingFiltersType) => {
     setFilters(newFilters);
   };
@@ -67,9 +70,8 @@ export function ParkingList({
   // Filter results based on filters
   const filteredResults = React.useMemo(() => {
     return results.filter((parking) => {
-      // Search term filter
-      if (filters.searchTerm) {
-        const searchLower = filters.searchTerm.toLowerCase();
+      if (debouncedSearchTerm) {
+        const searchLower = debouncedSearchTerm.toLowerCase();
         const matchesSearch =
           parking.name.toLowerCase().includes(searchLower) ||
           parking.address.toLowerCase().includes(searchLower) ||
@@ -78,7 +80,6 @@ export function ParkingList({
         if (!matchesSearch) return false;
       }
 
-      // Location filter
       if (filters.location) {
         const locationLower = filters.location.toLowerCase();
         if (!parking.location.toLowerCase().includes(locationLower)) {
@@ -120,7 +121,7 @@ export function ParkingList({
 
       return true;
     });
-  }, [results, filters]);
+  }, [results, debouncedSearchTerm, filters.location, filters.availableOnly, filters.unresolvedIssues, filters.startDate, filters.endDate]);
 
   const filtersComponent = (
     <ParkingFilters

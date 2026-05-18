@@ -14,7 +14,7 @@ import { ParkingFilters, type ParkingFilters as ParkingFiltersType } from "./par
 import { getColumns, type ParkingWithUser } from "./columns";
 import { api } from "@convex/_generated/api";
 import { Id } from "@convex/_generated/dataModel";
-import { useSafeMutation, useSafeQuery } from "@/lib/hooks";
+import { useSafeMutation, useSafeQuery, useDebounce } from "@/lib/hooks";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 
 export default function ParkingList() {
@@ -34,7 +34,8 @@ export default function ParkingList() {
     enabledOnly: false,
   });
 
-  const parkings = useSafeQuery(api.parkings.list, { query: '' });
+  const debouncedSearchTerm = useDebounce(filters.searchTerm, 300);
+  const parkings = useSafeQuery(api.parkings.list, { query: debouncedSearchTerm || undefined });
 
   const createUserAndParking = useSafeMutation(api.parkings.createUserAndParking);
   const updateParkingAndUser = useSafeMutation(api.parkings.updateParkingAndUser);
@@ -62,23 +63,10 @@ export default function ParkingList() {
   const filteredResults = React.useMemo(() => {
     if (!parkings) return [];
     return parkings.filter((parking) => {
-      // Hide anonymized parkings
       if (parking.name?.startsWith('[Anonymized')) {
         return false;
       }
 
-      // Search term filter
-      if (filters.searchTerm) {
-        const searchLower = filters.searchTerm.toLowerCase();
-        const matchesSearch =
-          parking.name.toLowerCase().includes(searchLower) ||
-          parking.address.toLowerCase().includes(searchLower) ||
-          parking.description.toLowerCase().includes(searchLower) ||
-          parking.location.toLowerCase().includes(searchLower);
-        if (!matchesSearch) return false;
-      }
-
-      // Location filter
       if (filters.location) {
         const locationLower = filters.location.toLowerCase();
         if (!parking.location.toLowerCase().includes(locationLower)) {
@@ -86,15 +74,13 @@ export default function ParkingList() {
         }
       }
 
-      // Available only filter
-      if (filters.availableOnly) {
+if (filters.availableOnly) {
         const hasUnresolvedIssues =
           ((parking.unresolvedMarkuleras || 0) > 0) ||
-          ((parking.unresolvedFelparkering || 0) > 0);
+          ((parking.unresolvedFelparkering || 0) > 0);
         if (hasUnresolvedIssues) return false;
       }
 
-      // Unresolved issues filter
       if (filters.unresolvedIssues) {
         const hasUnresolvedIssues =
           ((parking.unresolvedMarkuleras || 0) > 0) ||
@@ -102,25 +88,9 @@ export default function ParkingList() {
         if (!hasUnresolvedIssues) return false;
       }
 
-      // Date range filter
-      if (filters.startDate || filters.endDate) {
-        const startDate = filters.startDate ? new Date(filters.startDate).getTime() : 0;
-        const endDate = filters.endDate ? new Date(filters.endDate).getTime() : Date.now();
-
-        // Check if parking has availability in the specified date range
-        // This is a simplified check - in a real implementation you'd query the availability
-        // For now, we'll assume all parkings are available if they have no unresolved issues
-        if (filters.availableOnly) {
-          const hasUnresolvedIssues =
-            ((parking?.unresolvedMarkuleras || 0) > 0) ||
-            ((parking?.unresolvedFelparkering || 0) > 0);
-          if (hasUnresolvedIssues) return false;
-        }
-      }
-
       return true;
     }) || [];
-  }, [parkings, filters]);
+  }, [parkings, filters.location, filters.availableOnly, filters.unresolvedIssues, filters.startDate, filters.endDate]);
 
   const filtersComponent = (
     <ParkingFilters

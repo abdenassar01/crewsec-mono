@@ -288,14 +288,6 @@ export function ParkingForm({ onSubmit, defaultValues, isPending }: ParkingFormP
             required
           />
           <FieldInput
-            name="parkingDescription"
-            label="Description"
-            placeholder="A short description..."
-            form={form}
-            disabled={isPending}
-            required
-          />
-          <FieldInput
             name="maxCapacity"
             label="Max Capacity (optional)"
             placeholder="Leave empty for unlimited"
@@ -303,6 +295,15 @@ export function ParkingForm({ onSubmit, defaultValues, isPending }: ParkingFormP
             form={form}
             disabled={isPending}
           />
+          <FieldInput
+            name="parkingDescription"
+            label="Description"
+            placeholder="A short description..."
+            form={form}
+            disabled={isPending}
+            required
+          />
+         
         </div>
 
         <Button type="submit" disabled={isPending} className="w-full">
