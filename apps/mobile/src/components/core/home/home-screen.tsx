@@ -67,11 +67,12 @@ export function HomeScreen() {
 
   if (!parking) return <ActivityIndicator size={50} color={colors.secondary} />;
 
+  console.log("[PARKING: DEBUG]: ", parking )
   return (
     <>
       <HomeHeader
         name={parking?.name || 'CREWSEC'}
-        organizationLogo={parking?.organization?.logo}
+        organizationLogo={parking?.organisationLogo || '/logo.png'}
       />
       <View className="container mt-2">
         <Image

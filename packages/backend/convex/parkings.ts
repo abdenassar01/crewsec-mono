@@ -95,7 +95,11 @@ export const getMyParking = query({
     const organization = await ctx.db.get(parking.organizationId);
     if (!organization) return success({ parking: { ...parking, imageUrl }, user });
 
-    return success({ parking: { ...parking, imageUrl, organization }, user });
+    let organisationLogo = '';
+    if(organization?.logoStorageId) {
+      organisationLogo = organization?.logoStorageId ? (await ctx.storage.getUrl(organization.logoStorageId)) || '' : '';
+    }
+    return success({ parking: { ...parking, imageUrl, organization, organisationLogo }, user });
   },
 });
 

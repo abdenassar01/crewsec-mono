@@ -23,7 +23,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               className="flex items-center gap-2 font-semibold"
             >
               <Image
-                src="/logo.png"
+                src={user?.organisationLogo || '/logo.png'}
                 className="w-full"
                 alt="Crewsec Logo"
                 width={250}

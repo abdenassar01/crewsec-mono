@@ -87,7 +87,16 @@ export const getCurrentUserProfile = query({
       ? (await ctx.storage.getUrl(user.avatar)) || ''
       : '';
 
-    return { ...user, avatarUrl };
+    const orgId = getOrganizationId(user);
+
+    if(!orgId) throw new Error('User is not part of any organization');
+
+    const organization = await ctx.db.get(orgId);
+    let organisationLogo = '';
+    if(organization?.logoStorageId) {
+      organisationLogo = organization?.logoStorageId ? (await ctx.storage.getUrl(organization.logoStorageId)) || '' : '';
+    }
+    return { ...user, avatarUrl, orgId, organization, organisationLogo };
   },
 });
 
