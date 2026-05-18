@@ -13,7 +13,7 @@ export function HomeHeader({ name, organizationLogo }: Props) {
   const colorScheme = useColorScheme();
 
   return (
-    <View className="container flex-row items-center justify-between mt-4 p-2 bg-secondary/30 rounded-xl">
+    <View className="container flex-row items-center justify-between mt-4">
       <View className="justify-center">
         <Text className="text-xl font-bold text-secondary dark:text-yellow-400">
           {name}
@@ -21,7 +21,7 @@ export function HomeHeader({ name, organizationLogo }: Props) {
       </View>
 
       <Image
-        className="h-[40px] w-[150px]"
+        className="h-[60px] w-[150px] rounded-md"
         source={
           organizationLogo
             ? {uri: organizationLogo}

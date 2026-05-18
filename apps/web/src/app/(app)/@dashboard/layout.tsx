@@ -24,7 +24,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             >
               <Image
                 src={user?.organisationLogo || '/logo.png'}
-                className="w-full"
+                className="w-full mt-3 rounded-lg"
                 alt="Crewsec Logo"
                 width={250}
                 height={50}
