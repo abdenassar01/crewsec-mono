@@ -74,7 +74,7 @@ export const requireSuperAdmin = async (ctx: QueryCtx | MutationCtx) => {
 export const getOrganizationId = (
   user: { role: string; organizationId?: Id<'organizations'> | null } | null,
 ): Id<'organizations'> | null => {
-  if (!user || user.role === 'SUPER_ADMIN') return null;
+  if (!user) return null;
   return (user.organizationId as Id<'organizations'>) ?? null;
 };
 
